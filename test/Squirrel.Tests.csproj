@@ -83,6 +83,7 @@
     <Compile Include="PackageExtensionsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReleaseEntryTests.cs" />
+    <Compile Include="ReleaseExtensionsTests.cs" />
     <Compile Include="ReleasePackageTests.cs" />
     <Compile Include="SquirrelAwareExecutableDetectorTests.cs" />
     <Compile Include="TestHelpers\AssertExtensions.cs" />

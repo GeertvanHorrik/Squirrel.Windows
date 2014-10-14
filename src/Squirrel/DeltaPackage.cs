@@ -23,7 +23,7 @@ namespace Squirrel
             Contract.Requires(basePackage != null);
             Contract.Requires(!String.IsNullOrEmpty(outputFile) && !File.Exists(outputFile));
 
-            if (basePackage.Version > newPackage.Version) {
+            if (basePackage.Version.IsLargerThan(newPackage.Version)) {
                 var message = String.Format(
                     "You cannot create a delta package based on version {0} as it is a later version than {1}",
                     basePackage.Version,

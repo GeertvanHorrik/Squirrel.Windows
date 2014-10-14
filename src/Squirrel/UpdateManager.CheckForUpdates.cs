@@ -152,7 +152,7 @@ namespace Squirrel
                     return UpdateInfo.Create(Utility.FindCurrentVersion(localReleases), new[] {latestFullRelease}, packageDirectory, appFrameworkVersion);
                 }
 
-                if (localReleases.Max(x => x.Version) > remoteReleases.Max(x => x.Version)) {
+                if (localReleases.GetMaxVersion().IsLargerThan(remoteReleases.GetMaxVersion())) {
                     this.Log().Warn("hwhat, local version is greater than remote version");
 
                     var latestFullRelease = Utility.FindCurrentVersion(remoteReleases);

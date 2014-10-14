@@ -65,8 +65,10 @@ namespace Squirrel.Tests.Core
         {
             var fixture = ReleaseEntry.ParseReleaseEntry(releaseEntry);
 
-            Assert.Equal(expectedMajor, fixture.Version.Major);
-            Assert.Equal(expectedMinor, fixture.Version.Minor);
+            var version = new Version(fixture.Version);
+
+            Assert.Equal(expectedMajor, version.Major);
+            Assert.Equal(expectedMinor, version.Minor);
         }
 
         [Fact]
@@ -114,7 +116,7 @@ namespace Squirrel.Tests.Core
         [Fact]
         public void WhenMultipleReleaseMatchesReturnEarlierResult()
         {
-            var expected = new Version("1.7.5");
+            var expected = "1.7.5-beta";
             var package = new ReleasePackage("Espera-1.7.6-beta.nupkg");
 
             var releaseEntries = new[] {
@@ -133,7 +135,7 @@ namespace Squirrel.Tests.Core
         [Fact]
         public void WhenMultipleReleasesFoundReturnPreviousVersion()
         {
-            var expected = new Version("1.7.6");
+            var expected = "1.7.6-beta";
             var input = new ReleasePackage("Espera-1.7.7-beta.nupkg");
 
             var releaseEntries = new[] {
@@ -152,7 +154,7 @@ namespace Squirrel.Tests.Core
         [Fact]
         public void WhenMultipleReleasesFoundInOtherOrderReturnPreviousVersion()
         {
-            var expected = new Version("1.7.6");
+            var expected = "1.7.6-beta";
             var input = new ReleasePackage("Espera-1.7.7-beta.nupkg");
 
             var releaseEntries = new[] {
@@ -188,21 +190,21 @@ namespace Squirrel.Tests.Core
 
             var releases = ReleaseEntry.ParseReleaseFile(File.ReadAllText(path)).ToArray();
 
-            Assert.Equal(firstVersion, releases[0].Version);
-            Assert.Equal(secondVersion, releases[1].Version);
+            Assert.Equal(firstVersion, new Version(releases[0].Version));
+            Assert.Equal(secondVersion, new Version(releases[1].Version));
             Assert.Equal(true, releases[1].IsDelta);
-            Assert.Equal(secondVersion, releases[2].Version);
+            Assert.Equal(secondVersion, new Version(releases[2].Version));
             Assert.Equal(false, releases[2].IsDelta);
-            Assert.Equal(thirdVersion, releases[3].Version);
+            Assert.Equal(thirdVersion, new Version(releases[3].Version));
             Assert.Equal(true, releases[3].IsDelta);
-            Assert.Equal(thirdVersion, releases[4].Version);
+            Assert.Equal(thirdVersion, new Version(releases[4].Version));
             Assert.Equal(false, releases[4].IsDelta);
         }
 
         [Fact]
         public void ParseReleaseFileShouldReturnNothingForBlankFiles()
         {
-            Assert.True(ReleaseEntry.ParseReleaseFile("").Count() == 0);
+            Assert.True(ReleaseEntry.ParseReleaseFile(string.Empty).Count() == 0);
             Assert.True(ReleaseEntry.ParseReleaseFile(null).Count() == 0);
         }
 

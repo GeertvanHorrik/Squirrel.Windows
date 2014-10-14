@@ -77,7 +77,7 @@ namespace Squirrel
         /// executable</param>
         /// <returns>The running version, or null if this is not a Squirrel
         /// installed app (i.e. you're running from VS)</returns>
-        Version CurrentlyInstalledVersion(string executable = null);
+        string CurrentlyInstalledVersion(string executable = null);
 
         /// <summary>
         /// Creates an entry in Programs and Features based on the currently 

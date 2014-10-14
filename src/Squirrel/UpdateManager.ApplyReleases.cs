@@ -227,7 +227,7 @@ namespace Squirrel
                 }, "Failed to write file: " + target.FullName);
             }
 
-            void runPostInstallAndCleanup(Version newCurrentVersion, bool isBootstrapping)
+            void runPostInstallAndCleanup(string newCurrentVersion, bool isBootstrapping)
             {
                 fixPinnedExecutables(newCurrentVersion);
 
@@ -289,7 +289,7 @@ namespace Squirrel
                 return await createFullPackagesFromDeltas(releasesToApply.Skip(1), entry);
             }
 
-            void cleanUpOldVersions(Version newCurrentVersion)
+            void cleanUpOldVersions(string newCurrentVersion)
             {
                 var directory = new DirectoryInfo(rootAppDirectory);
                 if (!directory.Exists) {
@@ -302,7 +302,7 @@ namespace Squirrel
                 }
             }
 
-            async Task invokePostInstall(Version currentVersion, bool isInitialInstall, bool firstRunOnly)
+            async Task invokePostInstall(string currentVersion, bool isInitialInstall, bool firstRunOnly)
             {
                 var targetDir = getDirectoryForRelease(currentVersion);
                 var args = isInitialInstall ?
@@ -337,7 +337,7 @@ namespace Squirrel
                 squirrelApps.ForEach(exe => Process.Start(exe, firstRunParam));
             }
 
-            void fixPinnedExecutables(Version newCurrentVersion) 
+            void fixPinnedExecutables(string newCurrentVersion) 
             {
                 if (Environment.OSVersion.Version < new Version(6, 1)) {
                     this.Log().Warn("fixPinnedExecutables: Found OS Version '{0}', exiting...", Environment.OSVersion.VersionString);
@@ -428,7 +428,7 @@ namespace Squirrel
             // directory are "dead" (i.e. already uninstalled, but not deleted), and
             // we blow them away. This is to make sure that we don't attempt to run
             // an uninstaller on an already-uninstalled version.
-            async Task cleanDeadVersions(Version currentVersion)
+            async Task cleanDeadVersions(string currentVersion)
             {
                 if (currentVersion == null) return;
 
@@ -485,14 +485,14 @@ namespace Squirrel
                     .Where(x => x.Name.StartsWith("app-", StringComparison.InvariantCultureIgnoreCase));
             }
 
-            IEnumerable<DirectoryInfo> getOldReleases(Version version)
+            IEnumerable<DirectoryInfo> getOldReleases(string version)
             {
                 return getReleases()
-                    .Where(x => x.Name.ToVersion() < version)
+                    .Where(x => x.Name.ToVersion().IsSmallerThan(version))
                     .ToArray();
             }
 
-            DirectoryInfo getDirectoryForRelease(Version releaseVersion)
+            DirectoryInfo getDirectoryForRelease(string releaseVersion)
             {
                 return new DirectoryInfo(Path.Combine(rootAppDirectory, "app-" + releaseVersion));
             }
