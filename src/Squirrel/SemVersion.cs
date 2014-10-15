@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Squirrel
 {
+    [DebuggerDisplay("{Version}")]
     public class SemVersion : IComparable
     {
         private readonly string _version;
@@ -90,7 +92,7 @@ namespace Squirrel
 
         public override string ToString()
         {
-            return Version;
+            return _version;
         }
 
         private static string StripDashPartOfVersion(string version)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
@@ -27,6 +28,7 @@ namespace Squirrel
     }
 
     [DataContract]
+    [DebuggerDisplay("{PackageName} v{Version}")]
     public class ReleaseEntry : IEnableLogger, IReleaseEntry
     {
         [DataMember] public string SHA1 { get; protected set; }
@@ -127,6 +129,8 @@ namespace Squirrel
                 .Where(x => x != null)
                 .ToArray();
 
+            // TODO: Should we sort by version?
+
             return ret.Any(x => x == null) ? null : ret;
         }
 
@@ -134,6 +138,8 @@ namespace Squirrel
         {
             Contract.Requires(releaseEntries != null && releaseEntries.Any());
             Contract.Requires(stream != null);
+
+            // TODO: Should we sort by version?
 
             using (var sw = new StreamWriter(stream, Encoding.UTF8)) {
                 sw.Write(String.Join("\n", releaseEntries

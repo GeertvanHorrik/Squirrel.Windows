@@ -9,6 +9,19 @@ namespace Squirrel.Tests
 {
     public class CheckForUpdateTests
     {
+        [Theory]
+        [InlineData("stable", "2.0.0")]
+        [InlineData("unstable", "2.0.1-unstable0001")]
+        public async void NewReleasesShouldBeDetectedWithSemVer(string subtest, string expectedVersion)
+        {
+            var sourceDir = IntegrationTestHelper.GetPath("fixtures", "semver", subtest);
+
+            var updateManager = new UpdateManager(sourceDir, "theApp", FrameworkVersion.Net45, ".");
+            var updateInfo = await updateManager.CheckForUpdate();
+
+            Assert.Equal(new SemVersion(expectedVersion), updateInfo.FutureReleaseEntry.Version);
+        }
+
         [Fact]
         public void NewReleasesShouldBeDetected()
         {

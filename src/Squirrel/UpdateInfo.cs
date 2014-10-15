@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -13,6 +14,7 @@ namespace Squirrel
     }
 
     [DataContract]
+    [DebuggerDisplay("{PackageDirectory} {FutureReleaseEntry}")]
     public class UpdateInfo : IEnableLogger
     {
         [DataMember] public ReleaseEntry CurrentlyInstalledVersion { get; protected set; }
