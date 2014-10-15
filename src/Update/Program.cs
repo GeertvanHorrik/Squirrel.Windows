@@ -524,7 +524,7 @@ namespace Squirrel.Update
 
         static string getAppNameFromDirectory(string path = null)
         {
-            path = path ?? Environment.CurrentDirectory;
+            path = path ?? Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             return (new DirectoryInfo(path)).Name;
         }
 
