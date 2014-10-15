@@ -38,14 +38,14 @@ namespace Squirrel
         /// <param name="arguments">Use in a unit-test runner to mock the 
         /// arguments. In your app, leave this as null.</param>
         public static void HandleEvents(
-            Action<Version> onInitialInstall = null,
-            Action<Version> onAppUpdate = null,
-            Action<Version> onAppObsoleted = null,
-            Action<Version> onAppUninstall = null,
+            Action<SemVersion> onInitialInstall = null,
+            Action<SemVersion> onAppUpdate = null,
+            Action<SemVersion> onAppObsoleted = null,
+            Action<SemVersion> onAppUninstall = null,
             Action onFirstRun = null,
             string[] arguments = null)
         {
-            Action<Version> defaultBlock = (v => { });
+            Action<SemVersion> defaultBlock = (v => { });
             var args = arguments ?? Environment.GetCommandLineArgs().Skip(1).ToArray();
             if (args.Length == 0) return;
 
@@ -64,7 +64,7 @@ namespace Squirrel
             if (args.Length != 2) return;
 
             if (!lookup.ContainsKey(args[0])) return;
-            var version = new Version(args[1]);
+            var version = new SemVersion(args[1]);
 
             try {
                 lookup[args[0]](version);

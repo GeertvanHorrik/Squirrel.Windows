@@ -127,9 +127,8 @@ namespace Squirrel
                 .Where(x => !String.IsNullOrWhiteSpace(x))
                 .Select(ParseReleaseEntry)
                 .Where(x => x != null)
+                .OrderBy(x => x.Version)
                 .ToArray();
-
-            // TODO: Should we sort by version?
 
             return ret.Any(x => x == null) ? null : ret;
         }
@@ -138,8 +137,6 @@ namespace Squirrel
         {
             Contract.Requires(releaseEntries != null && releaseEntries.Any());
             Contract.Requires(stream != null);
-
-            // TODO: Should we sort by version?
 
             using (var sw = new StreamWriter(stream, Encoding.UTF8)) {
                 sw.Write(String.Join("\n", releaseEntries

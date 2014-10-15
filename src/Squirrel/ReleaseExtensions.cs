@@ -17,7 +17,7 @@ namespace Squirrel
         public static SemVersion ToVersion(this string fileName)
         {
             var strippedFileName = (new FileInfo(fileName)).Name
-                .Replace(".nupkg", string.Empty).Replace("-delta", string.Empty).Replace("-full", string.Empty);
+                .Replace(".nupkg", string.Empty).RemoveSquirrelPostfixes();
 
             var numberRegex = new Regex(@"^\d+$");
 
@@ -39,6 +39,16 @@ namespace Squirrel
             }
 
             return new SemVersion(strippedFileName);
+        }
+
+        public static string RemoveSquirrelPostfixes(this string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+
+            return value.Replace("-delta", string.Empty).Replace("-full", string.Empty);
         }
 
         private static int FindVersionPackageNameSeparatorIndex(this string value)

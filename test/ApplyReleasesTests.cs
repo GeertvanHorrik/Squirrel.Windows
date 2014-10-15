@@ -213,9 +213,9 @@ namespace Squirrel.Tests
                     .ShouldEqual(100);
 
                 var filesToFind = new[] {
-                    new {Name = "NLog.dll", Version = new Version("2.0.0.0")},
-                    new {Name = "NSync.Core.dll", Version = new Version("1.1.0.0")},
-                    new {Name = Path.Combine("sub", "Ionic.Zip.dll"), Version = new Version("1.9.1.8")},
+                    new {Name = "NLog.dll", Version = new SemVersion("2.0.0.0")},
+                    new {Name = "NSync.Core.dll", Version = new SemVersion("1.1.0.0")},
+                    new {Name = Path.Combine("sub", "Ionic.Zip.dll"), Version = new SemVersion("1.9.1.8")},
                 };
 
                 filesToFind.ForEach(x => {
@@ -224,7 +224,7 @@ namespace Squirrel.Tests
                     File.Exists(path).ShouldBeTrue();
 
                     var vi = FileVersionInfo.GetVersionInfo(path);
-                    var verInfo = new Version(vi.FileVersion ?? "1.0.0.0");
+                    var verInfo = new SemVersion(vi.FileVersion ?? "1.0.0.0");
                     x.Version.ShouldEqual(verInfo);
                 });
             }
@@ -264,8 +264,8 @@ namespace Squirrel.Tests
                 var rootDirectory = Path.Combine(tempDir, "theApp", "app-1.2.0.0");
 
                 new[] {
-                    new {Name = "NLog.dll", Version = new Version("2.0.0.0")},
-                    new {Name = "NSync.Core.dll", Version = new Version("1.1.0.0")},
+                    new {Name = "NLog.dll", Version = new SemVersion("2.0.0.0")},
+                    new {Name = "NSync.Core.dll", Version = new SemVersion("1.1.0.0")},
                 }.ForEach(x => {
                     var path = Path.Combine(rootDirectory, x.Name);
                     this.Log().Info("Looking for {0}", path);
@@ -313,8 +313,8 @@ namespace Squirrel.Tests
                 var rootDirectory = Path.Combine(tempDir, "theApp", "app-1.3.0.0");
 
                 new[] {
-                    new {Name = "NLog.dll", Version = new Version("2.0.0.0")},
-                    new {Name = "NSync.Core.dll", Version = new Version("1.1.0.0")},
+                    new {Name = "NLog.dll", Version = new SemVersion("2.0.0.0")},
+                    new {Name = "NSync.Core.dll", Version = new SemVersion("1.1.0.0")},
                 }.ForEach(x => {
                     var path = Path.Combine(rootDirectory, x.Name);
                     this.Log().Info("Looking for {0}", path);
@@ -364,9 +364,9 @@ namespace Squirrel.Tests
                     .ShouldEqual(100);
 
                 var filesToFind = new[] {
-                    new {Name = "NLog.dll", Version = new Version("2.0.0.0")},
-                    new {Name = "NSync.Core.dll", Version = new Version("1.1.0.0")},
-                    new {Name = Path.Combine("sub", "Ionic.Zip.dll"), Version = new Version("1.9.1.8")},
+                    new {Name = "NLog.dll", Version = new SemVersion("2.0.0.0")},
+                    new {Name = "NSync.Core.dll", Version = new SemVersion("1.1.0.0")},
+                    new {Name = Path.Combine("sub", "Ionic.Zip.dll"), Version = new SemVersion("1.9.1.8")},
                 };
 
                 filesToFind.ForEach(x => {
@@ -375,7 +375,7 @@ namespace Squirrel.Tests
                     File.Exists(path).ShouldBeTrue();
 
                     var vi = FileVersionInfo.GetVersionInfo(path);
-                    var verInfo = new Version(vi.FileVersion ?? "1.0.0.0");
+                    var verInfo = new SemVersion(vi.FileVersion ?? "1.0.0.0");
                     x.Version.ShouldEqual(verInfo);
                 });
             }

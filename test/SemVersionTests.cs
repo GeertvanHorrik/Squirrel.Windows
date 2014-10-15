@@ -45,6 +45,7 @@ namespace Squirrel.Tests
             [InlineData("1.1.0", "1.2.0-beta", false)]
             [InlineData("1.1.0", "1.1.0-beta", true)]
             [InlineData("1.1.0-beta", "1.1.0", false)]
+            [InlineData("1.0.0-unstable0016", "1.0.0", false)]
             public void ReturnsRightBooleanForVersionComparison(string input, string versionToCheck, bool expectedOutput)
             {
                 var output = new SemVersion(input) > new SemVersion(versionToCheck);
@@ -63,6 +64,7 @@ namespace Squirrel.Tests
             [InlineData("1.1.0", "1.2.0-beta", true)]
             [InlineData("1.1.0", "1.1.0-beta", false)]
             [InlineData("1.1.0-beta", "1.1.0", true)]
+            [InlineData("1.0.0-unstable0016", "1.0.0", true)]
             public void ReturnsRightBooleanForVersionComparison(string input, string versionToCheck, bool expectedOutput)
             {
                 var output = new SemVersion(input) < new SemVersion(versionToCheck);

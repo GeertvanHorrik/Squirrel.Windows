@@ -50,7 +50,8 @@ namespace Squirrel.Tests.Core
         {
             var path = IntegrationTestHelper.GetPath("fixtures", name);
 
-            using (var f = File.OpenRead(path)) {
+            using (var f = File.OpenRead(path))
+            {
                 var fixture = ReleaseEntry.GenerateFromFile(f, "dontcare");
                 Assert.Equal(size, fixture.Filesize);
                 Assert.Equal(sha1, fixture.SHA1.ToLowerInvariant());
@@ -65,7 +66,7 @@ namespace Squirrel.Tests.Core
         {
             var fixture = ReleaseEntry.ParseReleaseEntry(releaseEntry);
 
-            var version = new Version(fixture.Version.Version);
+            var version = fixture.Version.ClassicVersion;
 
             Assert.Equal(expectedMajor, version.Major);
             Assert.Equal(expectedMinor, version.Minor);
@@ -174,9 +175,9 @@ namespace Squirrel.Tests.Core
         public void WhenReleasesAreOutOfOrderSortByVersion()
         {
             var path = Path.GetTempFileName();
-            var firstVersion = new Version("1.0.0");
-            var secondVersion = new Version("1.1.0");
-            var thirdVersion = new Version("1.2.0");
+            var firstVersion = new SemVersion("1.0.0");
+            var secondVersion = new SemVersion("1.1.0");
+            var thirdVersion = new SemVersion("1.2.0");
 
             var releaseEntries = new[] {
                 ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.2.0-delta.nupkg")),
@@ -190,15 +191,51 @@ namespace Squirrel.Tests.Core
 
             var releases = ReleaseEntry.ParseReleaseFile(File.ReadAllText(path)).ToArray();
 
-            Assert.Equal(firstVersion, new Version(releases[0].Version.Version));
-            Assert.Equal(secondVersion, new Version(releases[1].Version.Version));
+            Assert.Equal(firstVersion, new SemVersion(releases[0].Version.Version));
+            Assert.Equal(secondVersion, new SemVersion(releases[1].Version.Version));
             Assert.Equal(true, releases[1].IsDelta);
-            Assert.Equal(secondVersion, new Version(releases[2].Version.Version));
+            Assert.Equal(secondVersion, new SemVersion(releases[2].Version.Version));
             Assert.Equal(false, releases[2].IsDelta);
-            Assert.Equal(thirdVersion, new Version(releases[3].Version.Version));
+            Assert.Equal(thirdVersion, new SemVersion(releases[3].Version.Version));
             Assert.Equal(true, releases[3].IsDelta);
-            Assert.Equal(thirdVersion, new Version(releases[4].Version.Version));
+            Assert.Equal(thirdVersion, new SemVersion(releases[4].Version.Version));
             Assert.Equal(false, releases[4].IsDelta);
+        }
+
+        [Fact]
+        public void WhenReleasesAreOutOfOrderSortByVersionSemVer()
+        {
+            var path = Path.GetTempFileName();
+            var expectedVersions = new[]
+            {
+                new SemVersion("1.0.0"),
+                new SemVersion("1.1.0"),
+                new SemVersion("1.2.0-unstable002"),
+                new SemVersion("1.2.0")
+            };
+
+            var releaseEntries = new[] {
+                ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.2.0-delta.nupkg")),
+                ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.2.0-unstable002-delta.nupkg")),
+                ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.1.0-full.nupkg")),
+                ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.1.0-delta.nupkg")),
+                ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.2.0-full.nupkg")),
+                ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.0.0-full.nupkg")),
+                ReleaseEntry.ParseReleaseEntry(MockReleaseEntry("Espera-1.2.0-unstable002-full.nupkg"))
+            };
+
+            ReleaseEntry.WriteReleaseFile(releaseEntries, path);
+
+            var releases = ReleaseEntry.ParseReleaseFile(File.ReadAllText(path)).ToArray();
+
+            Assert.Equal(expectedVersions[0], new SemVersion(releases[0].Version.Version));
+            for (int i = 1; i < releaseEntries.Length; i = i + 2)
+            {
+                var expectedReleaseIndex = i / 2 + 1;
+
+                Assert.Equal(true, releases[i].IsDelta);
+                Assert.Equal(expectedVersions[expectedReleaseIndex], new SemVersion(releases[i + 1].Version.Version));
+            }
         }
 
         [Fact]
