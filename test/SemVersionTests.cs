@@ -10,6 +10,8 @@ namespace Squirrel.Tests
             [Theory]
             [InlineData("MyProduct-1.7.0-unstable0036-full.nupkg", "1.7.0-unstable0036")]
             [InlineData("MyProduct-1.7.0-full.nupkg", "1.7.0")]
+            [InlineData("MyProduct.1.7.0-unstable0036-full.nupkg", "1.7.0-unstable0036")]
+            [InlineData("MyProduct.1.7.0-full.nupkg", "1.7.0")]
             public void ReturnsValidVersionForSemVer(string input, string expectedOutput)
             {
                 var output = input.ToVersion();

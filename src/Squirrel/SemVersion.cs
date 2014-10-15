@@ -12,7 +12,8 @@ namespace Squirrel
         public SemVersion(string version)
         {
             _version = version;
-            _classicVersion = new Version(StripDashPartOfVersion(version));
+            var classicVersion = StripDashPartOfVersion(version);
+            _classicVersion = new Version(classicVersion);
         }
 
         public string Version { get { return _version; } }

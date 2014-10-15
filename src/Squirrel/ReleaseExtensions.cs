@@ -21,12 +21,12 @@ namespace Squirrel
 
             var numberRegex = new Regex(@"^\d+$");
 
-            // While we can find a dash (-), check if the first item is a number (required in versioning, the rest is free to use)
-            var dashIndex = strippedFileName.IndexOf('-');
-            while (dashIndex >= 0)
+            // While we can find a , check if the first item is a number (required in versioning, the rest is free to use)
+            var separatorIndex = strippedFileName.FindVersionPackageNameSeparatorIndex();
+            while (separatorIndex >= 0)
             {
                 // A version can be splitted by . or -
-                var prefix = strippedFileName.Substring(0, dashIndex).Split(new [] { ".", "-" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                var prefix = strippedFileName.Substring(0, separatorIndex).Split(new [] { ".", "-" }, StringSplitOptions.RemoveEmptyEntries)[0];
                 if (numberRegex.IsMatch(prefix))
                 {
                     // We have the version
@@ -34,11 +34,34 @@ namespace Squirrel
                 }
 
                 // Strip and continue
-                strippedFileName = strippedFileName.Substring(dashIndex + 1);
-                dashIndex = strippedFileName.IndexOf('-');
+                strippedFileName = strippedFileName.Substring(separatorIndex + 1);
+                separatorIndex = strippedFileName.FindVersionPackageNameSeparatorIndex();
             }
 
             return new SemVersion(strippedFileName);
+        }
+
+        private static int FindVersionPackageNameSeparatorIndex(this string value)
+        {
+            var dotIndex = value.IndexOf('.');
+            var dashIndex = value.IndexOf('-');
+
+            if (dotIndex < 0 && dashIndex < 0)
+            {
+                return -1;
+            }
+
+            if (dotIndex == -1)
+            {
+                return dashIndex;
+            }
+
+            if (dashIndex == -1)
+            {
+                return dotIndex;
+            }
+
+            return Math.Min(dotIndex, dashIndex);
         }
 
         public static SemVersion GetMaxVersion(this IEnumerable<ReleaseEntry> releaseEntries)
