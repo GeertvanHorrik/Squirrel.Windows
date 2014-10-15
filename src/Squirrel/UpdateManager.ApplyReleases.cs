@@ -230,7 +230,7 @@ namespace Squirrel
                 }, "Failed to write file: " + target.FullName);
             }
 
-            void runPostInstallAndCleanup(string newCurrentVersion, bool isBootstrapping)
+            void runPostInstallAndCleanup(SemVersion newCurrentVersion, bool isBootstrapping)
             {
                 fixPinnedExecutables(newCurrentVersion);
 
@@ -292,7 +292,7 @@ namespace Squirrel
                 return await createFullPackagesFromDeltas(releasesToApply.Skip(1), entry);
             }
 
-            void cleanUpOldVersions(string newCurrentVersion)
+            void cleanUpOldVersions(SemVersion newCurrentVersion)
             {
                 var directory = new DirectoryInfo(rootAppDirectory);
                 if (!directory.Exists) {
@@ -305,7 +305,7 @@ namespace Squirrel
                 }
             }
 
-            void executeSelfUpdate(string currentVersion)
+            void executeSelfUpdate(SemVersion currentVersion)
             {
                 var targetDir = getDirectoryForRelease(currentVersion);
                 var newSquirrel = Path.Combine(targetDir.FullName, "Squirrel.exe");
@@ -329,7 +329,7 @@ namespace Squirrel
                     File.Copy(newSquirrel, Path.Combine(targetDir.Parent.FullName, "Update.exe"), true));
             }
 
-            async Task invokePostInstall(string currentVersion, bool isInitialInstall, bool firstRunOnly)
+            async Task invokePostInstall(SemVersion currentVersion, bool isInitialInstall, bool firstRunOnly)
             {
                 var targetDir = getDirectoryForRelease(currentVersion);
                 var args = isInitialInstall ?
@@ -360,11 +360,11 @@ namespace Squirrel
 
                 if (!isInitialInstall) return;
 
-                var firstRunParam = isInitialInstall ? "--squirrel-firstrun" : "";
+                var firstRunParam = isInitialInstall ? "--squirrel-firstrun" : string.Empty;
                 squirrelApps.ForEach(exe => Process.Start(exe, firstRunParam));
             }
 
-            void fixPinnedExecutables(string newCurrentVersion) 
+            void fixPinnedExecutables(SemVersion newCurrentVersion) 
             {
                 if (Environment.OSVersion.Version < new Version(6, 1)) {
                     this.Log().Warn("fixPinnedExecutables: Found OS Version '{0}', exiting...", Environment.OSVersion.VersionString);
@@ -455,7 +455,7 @@ namespace Squirrel
             // directory are "dead" (i.e. already uninstalled, but not deleted), and
             // we blow them away. This is to make sure that we don't attempt to run
             // an uninstaller on an already-uninstalled version.
-            async Task cleanDeadVersions(string currentVersion)
+            async Task cleanDeadVersions(SemVersion currentVersion)
             {
                 if (currentVersion == null) return;
 
@@ -512,14 +512,14 @@ namespace Squirrel
                     .Where(x => x.Name.StartsWith("app-", StringComparison.InvariantCultureIgnoreCase));
             }
 
-            IEnumerable<DirectoryInfo> getOldReleases(string version)
+            IEnumerable<DirectoryInfo> getOldReleases(SemVersion version)
             {
                 return getReleases()
-                    .Where(x => x.Name.ToVersion().IsSmallerThan(version))
+                    .Where(x => x.Name.ToVersion() < version)
                     .ToArray();
             }
 
-            DirectoryInfo getDirectoryForRelease(string releaseVersion)
+            DirectoryInfo getDirectoryForRelease(SemVersion releaseVersion)
             {
                 return new DirectoryInfo(Path.Combine(rootAppDirectory, "app-" + releaseVersion));
             }

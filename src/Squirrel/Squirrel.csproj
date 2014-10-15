@@ -89,6 +89,7 @@
     <Compile Include="ReleaseEntry.cs" />
     <Compile Include="ReleaseExtensions.cs" />
     <Compile Include="ReleasePackage.cs" />
+    <Compile Include="SemVersion.cs" />
     <Compile Include="ShellFile.cs" />
     <Compile Include="SquirrelAwareApp.cs" />
     <Compile Include="SquirrelAwareExecutableDetector.cs" />

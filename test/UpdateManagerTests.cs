@@ -294,7 +294,7 @@ namespace Squirrel.Tests
             public void CurrentlyInstalledVersionTests(string input, string expectedVersion)
             {
                 input = Environment.ExpandEnvironmentVariables(input);
-                var expected = expectedVersion != null ? expectedVersion : null;
+                var expected = expectedVersion != null ? new SemVersion(expectedVersion) : default(SemVersion);
 
                 using (var fixture = new UpdateManager("http://lol", "theApp", FrameworkVersion.Net45)) {
                     Assert.Equal(expected, fixture.CurrentlyInstalledVersion(input));

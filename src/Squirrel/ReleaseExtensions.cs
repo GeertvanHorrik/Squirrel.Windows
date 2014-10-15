@@ -9,12 +9,12 @@ namespace Squirrel
 {
     public static class VersionExtensions
     {
-        public static string ToVersion(this IReleasePackage package)
+        public static SemVersion ToVersion(this IReleasePackage package)
         {
             return package.InputPackageFile.ToVersion();
         }
 
-        public static string ToVersion(this string fileName)
+        public static SemVersion ToVersion(this string fileName)
         {
             var strippedFileName = (new FileInfo(fileName)).Name
                 .Replace(".nupkg", string.Empty).Replace("-delta", string.Empty).Replace("-full", string.Empty);
@@ -38,109 +38,27 @@ namespace Squirrel
                 dashIndex = strippedFileName.IndexOf('-');
             }
 
-            return strippedFileName;
+            return new SemVersion(strippedFileName);
         }
 
-        public static string StripDashPartOfVersion(this string version)
+        public static SemVersion GetMaxVersion(this IEnumerable<ReleaseEntry> releaseEntries)
         {
-            var dashIndex = version.IndexOf('-');
-            if (dashIndex != -1)
-            {
-                version = version.Substring(0, dashIndex);
-            }
-
-            return version;
+            return releaseEntries.Select(x => x.Version).Max();
         }
 
-        public static string GetMaxVersion(this IEnumerable<ReleaseEntry> releaseEntries)
+        public static SemVersion GetMaxVersion(this IEnumerable<string> versions)
         {
-            return GetMaxVersion(releaseEntries.Select(x => x.Version));
+            return versions.Select(x => new SemVersion(x)).Max();
         }
 
-        public static string GetMaxVersion(this IEnumerable<string> versions)
+        public static SemVersion GetMinVersion(this IEnumerable<ReleaseEntry> releaseEntries)
         {
-            var versionArray = versions.ToArray();
-
-            var maxVersion = versionArray.FirstOrDefault();
-
-            for (int i = 1; i < versionArray.Length; i++)
-            {
-                var version = versionArray[i];
-                if (version.IsLargerThan(maxVersion))
-                {
-                    maxVersion = version;
-                }
-            }
-
-            return maxVersion;
+            return releaseEntries.Select(x => x.Version).Min();
         }
 
-        public static string GetMinVersion(this IEnumerable<ReleaseEntry> releaseEntries)
+        public static SemVersion GetMinVersion(this IEnumerable<string> versions)
         {
-            return GetMinVersion(releaseEntries.Select(x => x.Version));
-        }
-
-        public static string GetMinVersion(this IEnumerable<string> versions)
-        {
-            var versionArray = versions.ToArray();
-
-            var minVersion = versionArray.FirstOrDefault();
-
-            for (int i = 1; i < versionArray.Length; i++)
-            {
-                var version = versionArray[i];
-                if (version.IsSmallerThan(minVersion))
-                {
-                    minVersion = version;
-                }
-            }
-
-            return minVersion;
-        }
-
-        public static bool IsLargerThan(this string version, string versionToCheck)
-        {
-            return CompareVersions(version, versionToCheck) > 0;
-        }
-
-        public static bool IsSmallerThan(this string version, string versionToCheck)
-        {
-            return CompareVersions(version, versionToCheck) < 0;
-        }
-
-        private static int CompareVersions(string versionA, string versionB)
-        {
-            var originalVersionA = versionA;
-            var originalVersionB = versionB;
-
-            var versionWithoutDashPart = originalVersionA.StripDashPartOfVersion();
-            var versionToCheckWithoutDashPart = originalVersionB.StripDashPartOfVersion();
-
-            versionA = versionWithoutDashPart;
-            versionB = versionToCheckWithoutDashPart;
-
-            if (string.Equals(versionWithoutDashPart, versionToCheckWithoutDashPart))
-            {
-                // Without dash part, versions are equal, special care
-
-                // If 1 of the items does not contain a dash, treat that as larger (1.0.0 is larger than 1.0.0-beta)
-                if (string.Equals(originalVersionA, versionA) && !string.Equals(originalVersionB, versionB))
-                {
-                    return 1;
-                }
-
-                // If 1 of the items does not contain a dash, treat that as larger (1.0.0-beta is smaller than 1.0.0)
-                if (!string.Equals(originalVersionA, versionA) && string.Equals(originalVersionB, versionB))
-                {
-                    return -1;
-                }
-
-                // Full compare
-                versionA = originalVersionA;
-                versionB = originalVersionB;
-            }
-
-            return string.Compare(versionA, versionB);
+            return versions.Select(x => new SemVersion(x)).Min();
         }
     }
 }

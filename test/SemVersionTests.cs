@@ -1,8 +1,9 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 
 namespace Squirrel.Tests
 {
-    public class ReleaseExtensionsTests
+    public class SemVersionTests
     {
         public class TheToVersionMethod
         {
@@ -13,11 +14,26 @@ namespace Squirrel.Tests
             {
                 var output = input.ToVersion();
 
-                Assert.StrictEqual(expectedOutput, output);
+                Assert.StrictEqual(expectedOutput, output.Version);
             }
         }
 
-        public class TheIsLargerThanMethod
+        public class TheClassicVersionProperty
+        {
+            [Theory]
+            [InlineData("1.1.0-unstable0036", "1.1.0")]
+            [InlineData("1.1.0-beta", "1.1.0")]
+            [InlineData("1.1.0", "1.1.0")]
+            public void ReturnsClassicVersionForAllVersions(string input, string expectedOutput)
+            {
+                var version = new SemVersion(input);
+                var expectedVersion = new Version(expectedOutput);
+
+                Assert.Equal(expectedVersion, version.ClassicVersion);
+            }
+        }
+
+        public class TheIsLargerOperator
         {
             [Theory]
             [InlineData("1.1.0", "1.1.0", false)]
@@ -29,13 +45,13 @@ namespace Squirrel.Tests
             [InlineData("1.1.0-beta", "1.1.0", false)]
             public void ReturnsRightBooleanForVersionComparison(string input, string versionToCheck, bool expectedOutput)
             {
-                var output = input.IsLargerThan(versionToCheck);
+                var output = new SemVersion(input) > new SemVersion(versionToCheck);
 
                 Assert.Equal(expectedOutput, output);
             }
         }
 
-        public class TheIsSmallerThanMethod
+        public class TheIsSmallerOperator
         {
             [Theory]
             [InlineData("1.1.0", "1.1.0", false)]
@@ -47,7 +63,7 @@ namespace Squirrel.Tests
             [InlineData("1.1.0-beta", "1.1.0", true)]
             public void ReturnsRightBooleanForVersionComparison(string input, string versionToCheck, bool expectedOutput)
             {
-                var output = input.IsSmallerThan(versionToCheck);
+                var output = new SemVersion(input) < new SemVersion(versionToCheck);
 
                 Assert.Equal(expectedOutput, output);
             }
@@ -68,7 +84,7 @@ namespace Squirrel.Tests
 
                 var output = input.GetMaxVersion();
 
-                Assert.Equal("2.0.0", output);
+                Assert.Equal("2.0.0", output.Version);
             }
         }
 
@@ -87,7 +103,7 @@ namespace Squirrel.Tests
 
                 var output = input.GetMinVersion();
 
-                Assert.Equal("1.0.0-beta", output);
+                Assert.Equal("1.0.0-beta", output.Version);
             }
         }
     }

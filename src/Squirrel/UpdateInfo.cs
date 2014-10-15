@@ -76,7 +76,7 @@ namespace Squirrel
             }
 
             var newerThanUs = availableReleases
-                .Where(x => x.Version.IsLargerThan(currentVersion.Version))
+                .Where(x => x.Version > currentVersion.Version)
                 .OrderBy(v => v.Version);
 
             var deltasSize = newerThanUs.Where(x => x.IsDelta).Sum(x => x.Filesize);

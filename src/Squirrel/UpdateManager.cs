@@ -120,7 +120,7 @@ namespace Squirrel
             installHelpers.RemoveShortcutsForExecutable(exeName, locations);
         }
 
-        public string CurrentlyInstalledVersion(string executable = null)
+        public SemVersion CurrentlyInstalledVersion(string executable = null)
         {
             executable = executable ??
                 Path.GetDirectoryName(typeof(UpdateManager).Assembly.Location);

@@ -83,7 +83,7 @@ namespace Squirrel
             }
         }
 
-        public string Version { get { return InputPackageFile.ToVersion(); } }
+        public SemVersion Version { get { return InputPackageFile.ToVersion(); } }
 
         public string CreateReleasePackage(string outputFile, string packagesRootDir = null, Func<string, string> releaseNotesProcessor = null, Action<string> contentsPostProcessHook = null)
         {

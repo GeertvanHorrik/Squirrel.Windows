@@ -65,7 +65,7 @@ namespace Squirrel.Tests.Core
         {
             var fixture = ReleaseEntry.ParseReleaseEntry(releaseEntry);
 
-            var version = new Version(fixture.Version);
+            var version = new Version(fixture.Version.Version);
 
             Assert.Equal(expectedMajor, version.Major);
             Assert.Equal(expectedMinor, version.Minor);
@@ -129,7 +129,7 @@ namespace Squirrel.Tests.Core
                 package,
                 @"C:\temp\");
 
-            Assert.Equal(expected, actual.Version);
+            Assert.Equal(expected, actual.Version.Version);
         }
 
         [Fact]
@@ -148,7 +148,7 @@ namespace Squirrel.Tests.Core
                 input,
                 @"C:\temp\");
 
-            Assert.Equal(expected, actual.Version);
+            Assert.Equal(expected, actual.Version.Version);
         }
 
         [Fact]
@@ -167,7 +167,7 @@ namespace Squirrel.Tests.Core
                 input,
                 @"C:\temp\");
 
-            Assert.Equal(expected, actual.Version);
+            Assert.Equal(expected, actual.Version.Version);
         }
 
         [Fact]
@@ -190,14 +190,14 @@ namespace Squirrel.Tests.Core
 
             var releases = ReleaseEntry.ParseReleaseFile(File.ReadAllText(path)).ToArray();
 
-            Assert.Equal(firstVersion, new Version(releases[0].Version));
-            Assert.Equal(secondVersion, new Version(releases[1].Version));
+            Assert.Equal(firstVersion, new Version(releases[0].Version.Version));
+            Assert.Equal(secondVersion, new Version(releases[1].Version.Version));
             Assert.Equal(true, releases[1].IsDelta);
-            Assert.Equal(secondVersion, new Version(releases[2].Version));
+            Assert.Equal(secondVersion, new Version(releases[2].Version.Version));
             Assert.Equal(false, releases[2].IsDelta);
-            Assert.Equal(thirdVersion, new Version(releases[3].Version));
+            Assert.Equal(thirdVersion, new Version(releases[3].Version.Version));
             Assert.Equal(true, releases[3].IsDelta);
-            Assert.Equal(thirdVersion, new Version(releases[4].Version));
+            Assert.Equal(thirdVersion, new Version(releases[4].Version.Version));
             Assert.Equal(false, releases[4].IsDelta);
         }
 
