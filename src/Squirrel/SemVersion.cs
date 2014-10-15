@@ -60,7 +60,7 @@ namespace Squirrel
                 return false;
             }
 
-            return CompareVersions(x.Version, y.Version) < 0;
+            return CompareVersions(x.Version, y.Version) == 0;
         }
 
         public static bool operator !=(SemVersion x, SemVersion y)
