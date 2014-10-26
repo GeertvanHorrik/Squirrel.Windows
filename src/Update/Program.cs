@@ -110,6 +110,8 @@ namespace Squirrel.Update
                     return -1;
                 }
 
+                var exitCode = ExitCodes.NothingToReport;
+
                 switch (updateAction) {
                 case UpdateAction.Install:
                     AnimatedGifWindow.ShowWindow(TimeSpan.FromSeconds(4), animatedGifWindowToken.Token);
@@ -122,7 +124,17 @@ namespace Squirrel.Update
                     Console.WriteLine(Download(target).Result);
                     break;
                 case UpdateAction.Update:
-                    Update(target).Wait();
+                    var updateTask = Update(target);
+                    updateTask.Wait();
+
+                    if (updateTask.Result.ReleasesToApply.Any())
+                    {
+                        exitCode = ExitCodes.NewVersionInstalled;
+                    }
+                    else
+                    {
+                        exitCode = ExitCodes.NoNewVersionAvailable;
+                    }
                     break;
                 case UpdateAction.UpdateSelf:
                     UpdateSelf(appName).Wait();
@@ -140,9 +152,9 @@ namespace Squirrel.Update
                     ProcessStart(processStart, processStartArgs);
                     break;
                 }
-            }
 
-            return 0;
+                return exitCode;
+            }
         }
 
         public async Task Install(bool silentInstall, string sourceDirectory = null)
@@ -177,7 +189,7 @@ namespace Squirrel.Update
             }
         }
 
-        public async Task Update(string updateUrl, string appName = null)
+        public async Task<UpdateInfo> Update(string updateUrl, string appName = null)
         {
             appName = appName ?? getAppNameFromDirectory();
 
@@ -192,6 +204,8 @@ namespace Squirrel.Update
                 await this.ErrorIfThrows(() =>
                     mgr.CreateUninstallerRegistryEntry(String.Format("{0} --uninstall", updateTarget), "-s"),
                     "Failed to create uninstaller registry entry");
+
+                return updateInfo;
             }
         }
 
