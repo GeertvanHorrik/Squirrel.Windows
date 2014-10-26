@@ -86,10 +86,7 @@ namespace Squirrel
                         if (squirrelAwareApps.Count > 0) {
                             await squirrelAwareApps.ForEachAsync(exe => Utility.InvokeProcessAsync(exe, String.Format("--squirrel-uninstall {0}", version)), 1);
                         } else {
-                            var allApps = currentRelease.EnumerateFiles()
-                                .Where(x => x.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                                .ToList();
-
+                            var allApps = SquirrelAwareExecutableDetector.GetAllApps(currentRelease.FullName);
                             allApps.ForEach(x => RemoveShortcutsForExecutable(x.Name, ShortcutLocation.StartMenu | ShortcutLocation.Desktop));
                         }
                     } catch (Exception ex) {
@@ -350,8 +347,7 @@ namespace Squirrel
                 if (squirrelApps.Count == 0) {
                     this.Log().Warn("No apps are marked as Squirrel-aware! Going to run them all");
 
-                    squirrelApps = targetDir.EnumerateFiles()
-                        .Where(x => x.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    squirrelApps = SquirrelAwareExecutableDetector.GetAllApps(targetDir.FullName)
                         .Select(x => x.FullName)
                         .ToList();
 

@@ -27,5 +27,5 @@ using System.Resources;
 
 // NOTE: Restamp on build server, I prefer GitVersion but anything can be used. Changing manually is not recommended but is possible
 
-[assembly: AssemblyVersion("0.5.6")]
-[assembly: AssemblyInformationalVersion("0.5.6, manually built in Visual Studio")]
+[assembly: AssemblyVersion("0.5.7")]
+[assembly: AssemblyInformationalVersion("0.5.7, manually built in Visual Studio")]
