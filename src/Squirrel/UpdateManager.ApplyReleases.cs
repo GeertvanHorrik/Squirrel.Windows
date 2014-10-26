@@ -54,7 +54,6 @@ namespace Squirrel
                 progress(50);
 
                 var newVersion = currentReleases.MaxBy(x => x.Version).First().Version;
-                executeSelfUpdate(newVersion);
 
                 await this.ErrorIfThrows(() => invokePostInstall(newVersion, attemptingFullInstall, false),
                     "Failed to invoke post-install");
@@ -65,6 +64,9 @@ namespace Squirrel
                 } catch (Exception ex) {
                     this.Log().WarnException("Failed to clean dead versions, continuing anyways", ex);
                 }
+
+                executeSelfUpdate(newVersion);
+
                 progress(100);
 
                 return ret;
