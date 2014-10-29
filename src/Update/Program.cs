@@ -184,7 +184,7 @@ namespace Squirrel.Update
                     "Failed to copy Update.exe to " + updateTarget);
 
                 await this.ErrorIfThrows(() =>
-                    mgr.CreateUninstallerRegistryEntry(String.Format("{0} --uninstall", updateTarget), "-s"),
+                    mgr.CreateUninstallerRegistryEntry(),
                     "Failed to create uninstaller registry entry");
             }
         }
@@ -202,7 +202,7 @@ namespace Squirrel.Update
                 var updateTarget = Path.Combine(mgr.RootAppDirectory, "Update.exe");
 
                 await this.ErrorIfThrows(() =>
-                    mgr.CreateUninstallerRegistryEntry(String.Format("{0} --uninstall", updateTarget), "-s"),
+                    mgr.CreateUninstallerRegistryEntry(),
                     "Failed to create uninstaller registry entry");
 
                 return updateInfo;
