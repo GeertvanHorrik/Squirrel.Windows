@@ -528,7 +528,7 @@ namespace Squirrel
                     versionInfo.ProductName,
                     package.Title,
                     versionInfo.FileDescription,
-                    versionInfo.FileName,
+                    Path.GetFileNameWithoutExtension(versionInfo.FileName)
                 };
 
                 var possibleCompanyNames = new[] {
