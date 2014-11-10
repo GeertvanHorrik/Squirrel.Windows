@@ -10,14 +10,18 @@ namespace Squirrel.Tests
     public class CheckForUpdateTests
     {
         [Theory]
-        [InlineData("stable", "2.0.0")]
-        [InlineData("unstable", "2.0.1-unstable0001")]
-        public async void NewReleasesShouldBeDetectedWithSemVer(string subtest, string expectedVersion)
+        [InlineData("stable", "2.2.0", "")]
+        [InlineData("unstable", "2.2.0", "")]
+        [InlineData("stable", "2.0.0", "20140801000000")] // 2.2.0 should be ignored, is older
+        [InlineData("unstable", "2.0.1-unstable0001", "20140801000000")] // 2.2.0 should be ignored, is older
+        public async void NewReleasesShouldBeDetectedWithSemVer(string subtest, string expectedVersion, string maximumReleaseDateString)
         {
+            var maximumReleaseDate = SquirrelEnvironment.ParseDateTime(maximumReleaseDateString, DateTime.MaxValue);
+
             var sourceDir = IntegrationTestHelper.GetPath("fixtures", "semver", subtest);
 
             var updateManager = new UpdateManager(sourceDir, "theApp", FrameworkVersion.Net45, ".");
-            var updateInfo = await updateManager.CheckForUpdate();
+            var updateInfo = await updateManager.CheckForUpdate(maximumReleaseDate: maximumReleaseDate);
 
             Assert.Equal(new SemVersion(expectedVersion), updateInfo.FutureReleaseEntry.Version);
         }

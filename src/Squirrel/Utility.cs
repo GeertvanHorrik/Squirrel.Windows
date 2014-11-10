@@ -308,13 +308,18 @@ namespace Squirrel
             }
         }
             
-        public static ReleaseEntry FindCurrentVersion(IEnumerable<ReleaseEntry> localReleases)
+        public static ReleaseEntry FindLatestFullVersion(IEnumerable<ReleaseEntry> releases, DateTime? maximumReleaseDate = null)
         {
-            if (!localReleases.Any()) {
+            if (!releases.Any()) {
                 return null;
             }
 
-            return localReleases.MaxBy(x => x.Version).SingleOrDefault(x => !x.IsDelta);
+            if (!maximumReleaseDate.HasValue)
+            {
+                maximumReleaseDate = DateTime.MaxValue;
+            }
+
+            return releases.Where(x => x.ReleaseDate <= maximumReleaseDate).MaxBy(x => x.Version).SingleOrDefault(x => !x.IsDelta);
         }
 
         static TAcc scan<T, TAcc>(this IEnumerable<T> This, TAcc initialValue, Func<TAcc, T, TAcc> accFunc)

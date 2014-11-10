@@ -184,7 +184,7 @@ namespace Squirrel.Tests
                 var aGivenPackage = Path.Combine(packages, package);
                 var baseEntry = ReleaseEntry.GenerateFromFile(aGivenPackage);
 
-                var updateInfo = UpdateInfo.Create(baseEntry, new[] { baseEntry }, "dontcare", FrameworkVersion.Net40);
+                var updateInfo = UpdateInfo.Create(baseEntry, new[] { baseEntry }, "dontcare", FrameworkVersion.Net40, null);
 
                 Assert.Empty(updateInfo.ReleasesToApply);
             }
@@ -213,7 +213,7 @@ namespace Squirrel.Tests
                 var deltaEntry = ReleaseEntry.GenerateFromFile(deltaPackage);
 
                 Assert.Throws<Exception>(
-                    () => UpdateInfo.Create(baseEntry, new[] { deltaEntry }, "dontcare", FrameworkVersion.Net40));
+                    () => UpdateInfo.Create(baseEntry, new[] { deltaEntry }, "dontcare", FrameworkVersion.Net40, null));
             }
         }
 
@@ -237,7 +237,7 @@ namespace Squirrel.Tests
                 var baseEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.0.0.0-full.nupkg"));
                 var latestFullEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.1.0.0-full.nupkg"));
 
-                var updateInfo = UpdateInfo.Create(baseEntry, new[] { latestFullEntry }, packagesDir, FrameworkVersion.Net40);
+                var updateInfo = UpdateInfo.Create(baseEntry, new[] { latestFullEntry }, packagesDir, FrameworkVersion.Net40, null);
                 updateInfo.ReleasesToApply.Contains(latestFullEntry).ShouldBeTrue();
 
                 var progress = new List<int>();
@@ -287,7 +287,7 @@ namespace Squirrel.Tests
                 var baseEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.1.0.0-full.nupkg"));
                 var latestFullEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.2.0.0-full.nupkg"));
 
-                var updateInfo = UpdateInfo.Create(baseEntry, new[] { latestFullEntry }, packagesDir, FrameworkVersion.Net40);
+                var updateInfo = UpdateInfo.Create(baseEntry, new[] { latestFullEntry }, packagesDir, FrameworkVersion.Net40, null);
                 updateInfo.ReleasesToApply.Contains(latestFullEntry).ShouldBeTrue();
 
                 var progress = new List<int>();
@@ -336,7 +336,7 @@ namespace Squirrel.Tests
                 var baseEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.1.0.0-full.nupkg"));
                 var latestFullEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.3.0.0-full.nupkg"));
 
-                var updateInfo = UpdateInfo.Create(baseEntry, new[] { latestFullEntry }, packagesDir, FrameworkVersion.Net40);
+                var updateInfo = UpdateInfo.Create(baseEntry, new[] { latestFullEntry }, packagesDir, FrameworkVersion.Net40, null);
                 updateInfo.ReleasesToApply.Contains(latestFullEntry).ShouldBeTrue();
 
                 var progress = new List<int>();
@@ -388,7 +388,7 @@ namespace Squirrel.Tests
                 var deltaEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.1.0.0-delta.nupkg"));
                 var latestFullEntry = ReleaseEntry.GenerateFromFile(Path.Combine(packagesDir, "Squirrel.Core.1.1.0.0-full.nupkg"));
 
-                var updateInfo = UpdateInfo.Create(baseEntry, new[] { deltaEntry, latestFullEntry }, packagesDir, FrameworkVersion.Net40);
+                var updateInfo = UpdateInfo.Create(baseEntry, new[] { deltaEntry, latestFullEntry }, packagesDir, FrameworkVersion.Net40, null);
                 updateInfo.ReleasesToApply.Contains(deltaEntry).ShouldBeTrue();
 
                 var progress = new List<int>();

@@ -14,5 +14,6 @@
         public const int NewVersionInstalled = 1;
         public const int NewMandatoryVersionInstalled = 2;
         public const int NoNewVersionAvailable = 3;
+        public const int NewVersionAvailableButNewerThanMaximumDate = 4;
     }
 }

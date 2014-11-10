@@ -20,17 +20,17 @@ namespace Squirrel
     public interface IUpdateManager : IDisposable, IEnableLogger
     {
         /// <summary>
-        /// Fetch the remote store for updates and compare against the current 
+        /// Fetch the remote store for updates and compare against the current
         /// version to determine what updates to download.
         /// </summary>
         /// <param name="ignoreDeltaUpdates">Set this flag if applying a release
         /// fails to fall back to a full release, which takes longer to download
         /// but is less error-prone.</param>
-        /// <param name="progress">A Observer which can be used to report Progress - 
+        /// <param name="maximumReleaseDate">The maximum release date.</param>
+        /// <param name="progress">A Observer which can be used to report Progress -
         /// will return values from 0-100 and Complete, or Throw</param>
-        /// <returns>An UpdateInfo object representing the updates to install.
-        /// </returns>
-        Task<UpdateInfo> CheckForUpdate(bool ignoreDeltaUpdates = false, Action<int> progress = null);
+        /// <returns>An UpdateInfo object representing the updates to install.</returns>
+        Task<UpdateInfo> CheckForUpdate(bool ignoreDeltaUpdates = false, DateTime? maximumReleaseDate = null, Action<int> progress = null);
 
         /// <summary>
         /// Download a list of releases into the local package directory.
@@ -136,7 +136,7 @@ namespace Squirrel
             var updateInfo = default(UpdateInfo);
 
             try {
-                updateInfo = await This.ErrorIfThrows(() => This.CheckForUpdate(ignoreDeltaUpdates, x => progress(x / 3)),
+                updateInfo = await This.ErrorIfThrows(() => This.CheckForUpdate(ignoreDeltaUpdates, progress: x => progress(x / 3)),
                     "Failed to check for updates");
 
                 await This.ErrorIfThrows(() =>

@@ -47,12 +47,12 @@ namespace Squirrel
             this.urlDownloader = urlDownloader ?? new FileDownloader();
         }
 
-        public async Task<UpdateInfo> CheckForUpdate(bool ignoreDeltaUpdates = false, Action<int> progress = null)
+        public async Task<UpdateInfo> CheckForUpdate(bool ignoreDeltaUpdates = false, DateTime? maximumReleaseDate = null, Action<int> progress = null)
         {
             var checkForUpdate = new CheckForUpdateImpl(rootAppDirectory);
 
             await acquireUpdateLock();
-            return await checkForUpdate.CheckForUpdate(Utility.LocalReleaseFileForAppDir(rootAppDirectory), updateUrlOrPath, ignoreDeltaUpdates, progress, urlDownloader);
+            return await checkForUpdate.CheckForUpdate(Utility.LocalReleaseFileForAppDir(rootAppDirectory), updateUrlOrPath, ignoreDeltaUpdates, maximumReleaseDate, progress, urlDownloader);
         }
 
         public async Task DownloadReleases(IEnumerable<ReleaseEntry> releasesToDownload, Action<int> progress = null)

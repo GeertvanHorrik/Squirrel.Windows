@@ -27,6 +27,7 @@ namespace Squirrel
                 string localReleaseFile,
                 string updateUrlOrPath,
                 bool ignoreDeltaUpdates = false, 
+                DateTime? maximumReleaseDate = null,
                 Action<int> progress = null,
                 IFileDownloader urlDownloader = null)
             {
@@ -113,7 +114,7 @@ namespace Squirrel
                     throw new Exception("Remote release File is empty or corrupted");
                 }
 
-                ret = determineUpdateInfo(localReleases, remoteReleases, ignoreDeltaUpdates);
+                ret = determineUpdateInfo(localReleases, remoteReleases, ignoreDeltaUpdates, maximumReleaseDate);
                 
                 progress(100);
                 return ret;
@@ -130,7 +131,7 @@ namespace Squirrel
                 Directory.CreateDirectory(pkgDir);
             }
 
-            UpdateInfo determineUpdateInfo(IEnumerable<ReleaseEntry> localReleases, IEnumerable<ReleaseEntry> remoteReleases, bool ignoreDeltaUpdates)
+            UpdateInfo determineUpdateInfo(IEnumerable<ReleaseEntry> localReleases, IEnumerable<ReleaseEntry> remoteReleases, bool ignoreDeltaUpdates, DateTime? maximumReleaseDate)
             {
                 var packageDirectory = Utility.PackageDirectoryForAppDir(rootAppDirectory);
                 localReleases = localReleases ?? Enumerable.Empty<ReleaseEntry>();
@@ -140,13 +141,13 @@ namespace Squirrel
                     throw new Exception("Corrupt remote RELEASES file");
                 }
 
-                var latestFullRelease = Utility.FindCurrentVersion(remoteReleases);
-                var currentRelease = Utility.FindCurrentVersion(localReleases);
+                var latestFullRelease = Utility.FindLatestFullVersion(remoteReleases, maximumReleaseDate);
+                var currentRelease = Utility.FindLatestFullVersion(localReleases);
 
                 if (latestFullRelease == currentRelease) {
                     this.Log().Info("No updates, remote and local are the same");
 
-                    var info = UpdateInfo.Create(currentRelease, new[] {latestFullRelease}, packageDirectory, appFrameworkVersion);
+                    var info = UpdateInfo.Create(currentRelease, new[] {latestFullRelease}, packageDirectory, appFrameworkVersion, maximumReleaseDate);
                     return info;
                 }
 
@@ -156,15 +157,15 @@ namespace Squirrel
 
                 if (!localReleases.Any()) {
                     this.Log().Warn("First run or local directory is corrupt, starting from scratch");
-                    return UpdateInfo.Create(Utility.FindCurrentVersion(localReleases), new[] {latestFullRelease}, packageDirectory, appFrameworkVersion);
+                    return UpdateInfo.Create(Utility.FindLatestFullVersion(localReleases), new[] {latestFullRelease}, packageDirectory, appFrameworkVersion, maximumReleaseDate);
                 }
 
                 if (localReleases.GetMaxVersion() > remoteReleases.GetMaxVersion()) {
                     this.Log().Warn("hwhat, local version is greater than remote version");
-                    return UpdateInfo.Create(Utility.FindCurrentVersion(localReleases), new[] {latestFullRelease}, packageDirectory, appFrameworkVersion);
+                    return UpdateInfo.Create(Utility.FindLatestFullVersion(localReleases), new[] {latestFullRelease}, packageDirectory, appFrameworkVersion, maximumReleaseDate);
                 }
 
-                return UpdateInfo.Create(currentRelease, remoteReleases, packageDirectory, appFrameworkVersion);
+                return UpdateInfo.Create(currentRelease, remoteReleases, packageDirectory, appFrameworkVersion, maximumReleaseDate);
             }
         }
     }

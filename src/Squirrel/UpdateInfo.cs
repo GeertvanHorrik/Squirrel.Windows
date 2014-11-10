@@ -20,7 +20,9 @@ namespace Squirrel
         [DataMember] public ReleaseEntry CurrentlyInstalledVersion { get; protected set; }
         [DataMember] public ReleaseEntry FutureReleaseEntry { get; protected set; }
         [DataMember] public List<ReleaseEntry> ReleasesToApply { get; protected set; }
+        [DataMember] public List<ReleaseEntry> ReleasesAfterMaximumDate { get; protected set; }
         [DataMember] public FrameworkVersion AppFrameworkVersion { get; protected set; }
+        [DataMember] public bool HasReleasesAfterMaximumDate { get { return ReleasesAfterMaximumDate.Count > 0; } }
 
         [IgnoreDataMember]
         public bool IsBootstrapping {
@@ -30,18 +32,29 @@ namespace Squirrel
         [IgnoreDataMember]
         public string PackageDirectory { get; protected set; }
 
-        protected UpdateInfo(ReleaseEntry currentlyInstalledVersion, IEnumerable<ReleaseEntry> releasesToApply, string packageDirectory, FrameworkVersion appFrameworkVersion)
+        protected UpdateInfo(ReleaseEntry currentlyInstalledVersion, IEnumerable<ReleaseEntry> releasesToApply, string packageDirectory, FrameworkVersion appFrameworkVersion, DateTime? maximumReleaseDate)
         {
+            var releases = (releasesToApply ?? Enumerable.Empty<ReleaseEntry>()).ToList();
+            if (!maximumReleaseDate.HasValue)
+            {
+                maximumReleaseDate = DateTime.MaxValue;
+            }
+
             // NB: When bootstrapping, CurrentlyInstalledVersion is null!
             CurrentlyInstalledVersion = currentlyInstalledVersion;
-            ReleasesToApply = (releasesToApply ?? Enumerable.Empty<ReleaseEntry>()).ToList();
-            FutureReleaseEntry = ReleasesToApply.Any() ?
-                ReleasesToApply.MaxBy(x => x.Version).FirstOrDefault() :
-                CurrentlyInstalledVersion;
+
+            ReleasesToApply = (from release in releases
+                               where release.ReleaseDate <= maximumReleaseDate.Value
+                               select release).ToList();
+
+            ReleasesAfterMaximumDate = (from release in releases
+                                        where release.ReleaseDate > maximumReleaseDate.Value
+                                        select release).ToList();
+
+            FutureReleaseEntry = ReleasesToApply.Any() ? ReleasesToApply.MaxBy(x => x.Version).FirstOrDefault() : CurrentlyInstalledVersion;
 
             AppFrameworkVersion = appFrameworkVersion;
-
-            this.PackageDirectory = packageDirectory;
+            PackageDirectory = packageDirectory;
         }
 
         public Dictionary<ReleaseEntry, string> FetchReleaseNotes()
@@ -59,7 +72,7 @@ namespace Squirrel
                 .ToDictionary(k => k.Item1, v => v.Item2);
         }
 
-        public static UpdateInfo Create(ReleaseEntry currentVersion, IEnumerable<ReleaseEntry> availableReleases, string packageDirectory, FrameworkVersion appFrameworkVersion)
+        public static UpdateInfo Create(ReleaseEntry currentVersion, IEnumerable<ReleaseEntry> availableReleases, string packageDirectory, FrameworkVersion appFrameworkVersion, DateTime? maximumReleaseDate)
         {
             Contract.Requires(availableReleases != null);
             Contract.Requires(!String.IsNullOrEmpty(packageDirectory));
@@ -70,11 +83,11 @@ namespace Squirrel
             }
 
             if (currentVersion == null) {
-                return new UpdateInfo(currentVersion, new[] { latestFull }, packageDirectory, appFrameworkVersion);
+                return new UpdateInfo(currentVersion, new[] { latestFull }, packageDirectory, appFrameworkVersion, maximumReleaseDate);
             }
 
             if (currentVersion.Version == latestFull.Version) {
-                return new UpdateInfo(currentVersion, Enumerable.Empty<ReleaseEntry>(), packageDirectory, appFrameworkVersion);
+                return new UpdateInfo(currentVersion, Enumerable.Empty<ReleaseEntry>(), packageDirectory, appFrameworkVersion, maximumReleaseDate);
             }
 
             var newerThanUs = availableReleases
@@ -83,9 +96,9 @@ namespace Squirrel
 
             var deltasSize = newerThanUs.Where(x => x.IsDelta).Sum(x => x.Filesize);
 
-            return (deltasSize < latestFull.Filesize && deltasSize > 0) ? 
-                new UpdateInfo(currentVersion, newerThanUs.Where(x => x.IsDelta).ToArray(), packageDirectory, appFrameworkVersion) : 
-                new UpdateInfo(currentVersion, new[] { latestFull }, packageDirectory, appFrameworkVersion);
+            return (deltasSize < latestFull.Filesize && deltasSize > 0) ?
+                new UpdateInfo(currentVersion, newerThanUs.Where(x => x.IsDelta).ToArray(), packageDirectory, appFrameworkVersion, maximumReleaseDate) :
+                new UpdateInfo(currentVersion, new[] { latestFull }, packageDirectory, appFrameworkVersion, maximumReleaseDate);
         }
     }
 }

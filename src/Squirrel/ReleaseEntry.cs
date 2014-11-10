@@ -30,7 +30,7 @@ namespace Squirrel
     }
 
     [DataContract]
-    [DebuggerDisplay("{PackageName} v{Version}")]
+    [DebuggerDisplay("{PackageName} v{Version} released on {ReleaseDate}")]
     public class ReleaseEntry : IEnableLogger, IReleaseEntry
     {
         [DataMember] public string SHA1 { get; protected set; }
@@ -63,7 +63,7 @@ namespace Squirrel
 
                 if (ReleaseDate > new DateTime(1970, 1, 1))
                 {
-                    entry += string.Format(" {0}", ReleaseDate.ToString(dateTimePattern, CultureInfo.InvariantCulture));
+                    entry += string.Format(" {0}", ReleaseDate.ToString(SquirrelEnvironment.DateTimePattern, CultureInfo.InvariantCulture));
                 }
 
                 return entry;
@@ -90,14 +90,13 @@ namespace Squirrel
             return zp.ReleaseNotes;
         }
 
-        const string dateTimePattern = "yyyyMMddHHmmss";
         static readonly Regex entryRegex = new Regex(@"^([0-9a-fA-F]{40})\s+(\S+)\s+(\d+)\s?(\d+)?[\r]*$");
         static readonly Regex commentRegex = new Regex(@"#.*$");
         public static ReleaseEntry ParseReleaseEntry(string entry)
         {
             Contract.Requires(entry != null);
 
-            entry = commentRegex.Replace(entry, "");
+            entry = commentRegex.Replace(entry, string.Empty);
             if (String.IsNullOrWhiteSpace(entry)) {
                 return null;
             }
@@ -133,7 +132,7 @@ namespace Squirrel
             var dateTime = DateTime.MinValue;
             if (m.Groups.Count > 4)
             {
-                DateTime.TryParseExact(m.Groups[4].Value, dateTimePattern, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime);
+                dateTime = SquirrelEnvironment.ParseDateTime(m.Groups[4].Value, dateTime);
             }
 
             var isDelta = filenameIsDeltaFile(filename);
