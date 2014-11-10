@@ -20,7 +20,7 @@ namespace Squirrel.Tests.Core
         [InlineData(@"14db31d2647c6d2284882a2e101924a9c409ee67  MyCoolApp-1.1.nupkg.delta  80396 20141112131415", "MyCoolApp-1.1.nupkg.delta", 80396, null)]
         [InlineData(@"0000000000000000000000000000000000000000  http://test.org/Folder/MyCoolApp-1.2.nupkg  2569 20141112131415", "MyCoolApp-1.2.nupkg", 2569, "http://test.org/Folder/")]
         [InlineData(@"0000000000000000000000000000000000000000  https://www.test.org/Folder/MyCoolApp-1.2-delta.nupkg  1231953 20141112131415", "MyCoolApp-1.2-delta.nupkg", 1231953, "https://www.test.org/Folder/")]
-        [InlineData(@"F3AE4F750A440C1767AE58FA3F5FBD70282B876E MyProduct-2.2.0-delta.nupkg 26705 20140802000000", "MyProduct-2.2.0-delta.nupkg", 1004502, null)]
+        [InlineData(@"F3AE4F750A440C1767AE58FA3F5FBD70282B876E MyProduct-2.2.0-delta.nupkg 26705 20141112131415", "MyProduct-2.2.0-delta.nupkg", 26705, null)]
         public void ParseValidReleaseEntryLines(string releaseEntry, string fileName, long fileSize, string baseUrl)
         {
             var fixture = ReleaseEntry.ParseReleaseEntry(releaseEntry);
