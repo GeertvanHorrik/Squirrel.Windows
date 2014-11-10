@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,6 +23,7 @@ namespace Squirrel
         bool IsDelta { get; }
         string EntryAsString { get; }
         SemVersion Version { get; }
+        DateTime ReleaseDate { get; }
         string PackageName { get; }
 
         string GetReleaseNotes(string packageDirectory);
@@ -36,20 +38,36 @@ namespace Squirrel
         [DataMember] public string Filename { get; protected set; }
         [DataMember] public long Filesize { get; protected set; }
         [DataMember] public bool IsDelta { get; protected set; }
+        [DataMember] public DateTime ReleaseDate { get; protected set; }
 
-        protected ReleaseEntry(string sha1, string filename, long filesize, bool isDelta, string baseUrl = null)
+        protected ReleaseEntry(string sha1, string filename, long filesize, bool isDelta, DateTime releaseDate, string baseUrl = null)
         {
             Contract.Requires(sha1 != null && sha1.Length == 40);
             Contract.Requires(filename != null);
             Contract.Requires(filename.Contains(Path.DirectorySeparatorChar) == false);
             Contract.Requires(filesize > 0);
 
-            SHA1 = sha1; BaseUrl = baseUrl;  Filename = filename; Filesize = filesize; IsDelta = isDelta;
+            SHA1 = sha1; 
+            BaseUrl = baseUrl;  
+            Filename = filename; 
+            Filesize = filesize; 
+            IsDelta = isDelta;
+            ReleaseDate = releaseDate;
         }
 
         [IgnoreDataMember]
         public string EntryAsString {
-            get { return String.Format("{0} {1}{2} {3}", SHA1, BaseUrl, Filename, Filesize); }
+            get
+            {
+                var entry = string.Format("{0} {1}{2} {3}", SHA1, BaseUrl, Filename, Filesize);
+
+                if (ReleaseDate > new DateTime(1970, 1, 1))
+                {
+                    entry += string.Format(" {0}", ReleaseDate.ToString(dateTimePattern, CultureInfo.InvariantCulture));
+                }
+
+                return entry;
+            }
         }
 
         [IgnoreDataMember]
@@ -72,7 +90,8 @@ namespace Squirrel
             return zp.ReleaseNotes;
         }
 
-        static readonly Regex entryRegex = new Regex(@"^([0-9a-fA-F]{40})\s+(\S+)\s+(\d+)[\r]*$");
+        const string dateTimePattern = "yyyyMMddHHmmss";
+        static readonly Regex entryRegex = new Regex(@"^([0-9a-fA-F]{40})\s+(\S+)\s+(\d+)\s?(\d+)?[\r]*$");
         static readonly Regex commentRegex = new Regex(@"#.*$");
         public static ReleaseEntry ParseReleaseEntry(string entry)
         {
@@ -88,7 +107,7 @@ namespace Squirrel
                 throw new Exception("Invalid release entry: " + entry);
             }
 
-            if (m.Groups.Count != 4) {
+            if (m.Groups.Count < 4) {
                 throw new Exception("Invalid release entry: " + entry);
             }
 
@@ -109,10 +128,17 @@ namespace Squirrel
                 throw new Exception("Filename can either be an absolute HTTP[s] URL, *or* a file name");
             }
 
-            long size = Int64.Parse(m.Groups[3].Value);
-            bool isDelta = filenameIsDeltaFile(filename);
+            var size = Int64.Parse(m.Groups[3].Value);
 
-            return new ReleaseEntry(m.Groups[1].Value, filename, size, isDelta, baseUrl);
+            var dateTime = DateTime.MinValue;
+            if (m.Groups.Count > 4)
+            {
+                DateTime.TryParseExact(m.Groups[4].Value, dateTimePattern, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime);
+            }
+
+            var isDelta = filenameIsDeltaFile(filename);
+
+            return new ReleaseEntry(m.Groups[1].Value, filename, size, isDelta, dateTime, baseUrl);
         }
 
         public static IEnumerable<ReleaseEntry> ParseReleaseFile(string fileContents)
@@ -156,19 +182,21 @@ namespace Squirrel
             }
         }
 
-        public static ReleaseEntry GenerateFromFile(Stream file, string filename, string baseUrl = null)
+        public static ReleaseEntry GenerateFromFile(Stream file, string path, string filename, string baseUrl = null)
         {
             Contract.Requires(file != null && file.CanRead);
             Contract.Requires(!String.IsNullOrEmpty(filename));
 
+            var fileInfo = new FileInfo(path);
+
             var hash = Utility.CalculateStreamSHA1(file);
-            return new ReleaseEntry(hash, filename, file.Length, filenameIsDeltaFile(filename), baseUrl);
+            return new ReleaseEntry(hash, filename, file.Length, filenameIsDeltaFile(filename), fileInfo.CreationTimeUtc, baseUrl);
         }
 
         public static ReleaseEntry GenerateFromFile(string path, string baseUrl = null)
         {
             using (var inf = File.OpenRead(path)) {
-                return GenerateFromFile(inf, Path.GetFileName(path), baseUrl);
+                return GenerateFromFile(inf, path, Path.GetFileName(path), baseUrl);
             }
         }
 
@@ -180,7 +208,7 @@ namespace Squirrel
             var entriesQueue = new ConcurrentQueue<ReleaseEntry>();
             Parallel.ForEach(packagesDir.GetFiles("*.nupkg"), x => {
                 using (var file = x.OpenRead()) {
-                    entriesQueue.Enqueue(GenerateFromFile(file, x.Name));
+                    entriesQueue.Enqueue(GenerateFromFile(file, x.FullName, x.Name));
                 }
             });
 

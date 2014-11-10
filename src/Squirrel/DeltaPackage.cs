@@ -167,7 +167,7 @@ namespace Squirrel
             using (var of = File.Create(targetFile.FullName + ".diff")) {
                 BinaryPatchUtility.Create(oldData, newData, of);
 
-                var rl = ReleaseEntry.GenerateFromFile(new MemoryStream(newData), targetFile.Name + ".shasum");
+                var rl = ReleaseEntry.GenerateFromFile(new MemoryStream(newData), targetFile.FullName, targetFile.Name + ".shasum");
                 File.WriteAllText(targetFile.FullName + ".shasum", rl.EntryAsString, Encoding.UTF8);
                 targetFile.Delete();
             }

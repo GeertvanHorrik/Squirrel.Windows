@@ -201,8 +201,9 @@ namespace Squirrel.Update
                 bool ignoreDeltaUpdates = false;
 
             retry:
+                UpdateInfo updateInfo = null;
                 try {
-                    var updateInfo = await mgr.CheckForUpdate(ignoreDeltaUpdates: ignoreDeltaUpdates, progress: x => Console.WriteLine(x / 3));
+                    updateInfo = await mgr.CheckForUpdate(ignoreDeltaUpdates: ignoreDeltaUpdates, progress: x => Console.WriteLine(x / 3));
                     await mgr.DownloadReleases(updateInfo.ReleasesToApply, x => Console.WriteLine(33 + x / 3));
                     await mgr.ApplyReleases(updateInfo, x => Console.WriteLine(66 + x / 3));
                 } catch (Exception ex) {

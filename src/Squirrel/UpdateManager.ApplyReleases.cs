@@ -285,7 +285,7 @@ namespace Squirrel
                 }
 
                 var fi = new FileInfo(ret.InputPackageFile);
-                var entry = ReleaseEntry.GenerateFromFile(fi.OpenRead(), fi.Name);
+                var entry = ReleaseEntry.GenerateFromFile(fi.OpenRead(), fi.FullName, fi.Name);
 
                 // Recursively combine the rest of them
                 return await createFullPackagesFromDeltas(releasesToApply.Skip(1), entry);

@@ -15,12 +15,23 @@ namespace Squirrel.Tests.Core
         [InlineData(@"14db31d2647c6d2284882a2e101924a9c409ee67  MyCoolApp-1.1.nupkg.delta  80396", "MyCoolApp-1.1.nupkg.delta", 80396, null)]
         [InlineData(@"0000000000000000000000000000000000000000  http://test.org/Folder/MyCoolApp-1.2.nupkg  2569", "MyCoolApp-1.2.nupkg", 2569, "http://test.org/Folder/")]
         [InlineData(@"0000000000000000000000000000000000000000  https://www.test.org/Folder/MyCoolApp-1.2-delta.nupkg  1231953", "MyCoolApp-1.2-delta.nupkg", 1231953, "https://www.test.org/Folder/")]
+        [InlineData(@"94689fede03fed7ab59c24337673a27837f0c3ec MyCoolApp-1.0.nupkg 1004502 20141112131415", "MyCoolApp-1.0.nupkg", 1004502, null)]
+        [InlineData(@"3a2eadd15dd984e4559f2b4d790ec8badaeb6a39   MyCoolApp-1.1.nupkg   1040561 20141112131415", "MyCoolApp-1.1.nupkg", 1040561, null)]
+        [InlineData(@"14db31d2647c6d2284882a2e101924a9c409ee67  MyCoolApp-1.1.nupkg.delta  80396 20141112131415", "MyCoolApp-1.1.nupkg.delta", 80396, null)]
+        [InlineData(@"0000000000000000000000000000000000000000  http://test.org/Folder/MyCoolApp-1.2.nupkg  2569 20141112131415", "MyCoolApp-1.2.nupkg", 2569, "http://test.org/Folder/")]
+        [InlineData(@"0000000000000000000000000000000000000000  https://www.test.org/Folder/MyCoolApp-1.2-delta.nupkg  1231953 20141112131415", "MyCoolApp-1.2-delta.nupkg", 1231953, "https://www.test.org/Folder/")]
         public void ParseValidReleaseEntryLines(string releaseEntry, string fileName, long fileSize, string baseUrl)
         {
             var fixture = ReleaseEntry.ParseReleaseEntry(releaseEntry);
             Assert.Equal(fileName, fixture.Filename);
             Assert.Equal(fileSize, fixture.Filesize);
             Assert.Equal(baseUrl, fixture.BaseUrl);
+
+            // Workaround since we cannot pass date/time via attributes
+            if (fixture.ReleaseDate != DateTime.MinValue)
+            {
+                Assert.Equal(new DateTime(2014, 11, 12, 13, 14, 15), fixture.ReleaseDate);    
+            }
         }
 
         [Theory]
@@ -52,7 +63,7 @@ namespace Squirrel.Tests.Core
 
             using (var f = File.OpenRead(path))
             {
-                var fixture = ReleaseEntry.GenerateFromFile(f, "dontcare");
+                var fixture = ReleaseEntry.GenerateFromFile(f, "dontcare", "dontcare");
                 Assert.Equal(size, fixture.Filesize);
                 Assert.Equal(sha1, fixture.SHA1.ToLowerInvariant());
             }
