@@ -106,7 +106,7 @@ namespace Squirrel.Update
                     { "g=|loadingGif=", "Path to an animated GIF to be displayed during installation", v => backgroundGif = v},
                     { "n=|signWithParams=", "Sign the installer via SignTool.exe with the parameters given", v => signingParameters = v},
                     { "s|silent", "Silent install", _ => silentInstall = true},
-                    { "md|maximumdate", "Maximum release date", v => maximumReleaseDate = SquirrelEnvironment.ParseDateTime(v, DateTime.MaxValue)},
+                    { "md=|maximumdate=", "Maximum release date", v => maximumReleaseDate = SquirrelEnvironment.ParseDateTime(v, DateTime.MaxValue)},
                     { "b=|baseUrl=", "Provides a base URL to prefix the RELEASES file packages with", v => baseUrl = v, true},
                     { "a=|process-start-args=", "Arguments that will be used when starting executable", v => processStartArgs = v, true},
                 };
@@ -171,6 +171,8 @@ namespace Squirrel.Update
                         ProcessStart(processStart, processStartArgs);
                         break;
                 }
+
+                this.Log().Info("Exit code: {0}", exitCode);
 
                 return exitCode;
             }

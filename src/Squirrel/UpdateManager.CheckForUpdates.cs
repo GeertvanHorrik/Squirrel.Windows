@@ -116,6 +116,12 @@ namespace Squirrel
 
                 ret = determineUpdateInfo(localReleases, remoteReleases, ignoreDeltaUpdates, maximumReleaseDate);
                 
+                var log = this.Log();
+
+                log.Info("Maximum release date: {0}", maximumReleaseDate ?? DateTime.MaxValue);
+                log.Info("Available releases: {0}", ret.ReleasesToApply.Count);
+                log.Info("Available releases outside maintenance window: {0}", ret.ReleasesAfterMaximumDate.Count);
+
                 progress(100);
                 return ret;
             }
