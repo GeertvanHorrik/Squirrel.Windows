@@ -631,7 +631,14 @@ namespace Squirrel.Update
 
         static string getAppNameFromDirectory(string path = null)
         {
-            path = path ?? Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var fallbackPath = Assembly.GetExecutingAssembly().Location;
+
+            if (Debugger.IsAttached)
+            {
+                fallbackPath = Path.Combine(Environment.CurrentDirectory, "update.exe");
+            }
+
+            path = path ?? Path.GetDirectoryName(fallbackPath);
             return (new DirectoryInfo(path)).Name;
         }
 
