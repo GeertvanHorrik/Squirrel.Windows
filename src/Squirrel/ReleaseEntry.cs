@@ -176,17 +176,17 @@ namespace Squirrel
             Contract.Requires(releaseEntries != null && releaseEntries.Any());
             Contract.Requires(!String.IsNullOrEmpty(path));
 
-            using (var f = File.OpenWrite(path)) {
+            using (var f = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.None)) {
                 WriteReleaseFile(releaseEntries, f);
             }
         }
 
-        public static ReleaseEntry GenerateFromFile(Stream file, string path, string filename, string baseUrl = null)
+        public static ReleaseEntry GenerateFromFile(Stream file, string filename, string baseUrl = null)
         {
             Contract.Requires(file != null && file.CanRead);
             Contract.Requires(!String.IsNullOrEmpty(filename));
 
-            var fileInfo = new FileInfo(path);
+            var fileInfo = new FileInfo(filename);
 
             var hash = Utility.CalculateStreamSHA1(file);
             return new ReleaseEntry(hash, filename, file.Length, filenameIsDeltaFile(filename), fileInfo.CreationTimeUtc, baseUrl);
@@ -195,7 +195,7 @@ namespace Squirrel
         public static ReleaseEntry GenerateFromFile(string path, string baseUrl = null)
         {
             using (var inf = File.OpenRead(path)) {
-                return GenerateFromFile(inf, path, Path.GetFileName(path), baseUrl);
+                return GenerateFromFile(inf, path, baseUrl);
             }
         }
 

@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net;
 
 namespace Squirrel
 {
@@ -115,6 +116,19 @@ namespace Squirrel
             }
         }
 
+        public static WebClient CreateWebClient()
+        {
+            // WHY DOESNT IT JUST DO THISSSSSSSS
+            var ret = new WebClient();
+            var wp = WebRequest.DefaultWebProxy;
+            if (wp != null) {
+                wp.Credentials = CredentialCache.DefaultCredentials;
+                ret.Proxy = wp;
+            }
+
+            return ret;
+        }
+
         public static async Task CopyToAsync(string from, string to)
         {
             Contract.Requires(!String.IsNullOrEmpty(from) && File.Exists(from));
@@ -162,22 +176,32 @@ namespace Squirrel
             }
         }
 
-        public static Task<int> InvokeProcessAsync(string fileName, string arguments)
+        public static Task<Tuple<int, string>> InvokeProcessAsync(string fileName, string arguments)
         {
             var psi = new ProcessStartInfo(fileName, arguments);
             psi.UseShellExecute = false;
             psi.WindowStyle = ProcessWindowStyle.Hidden;
             psi.ErrorDialog = false;
+            psi.CreateNoWindow = true;
+            psi.RedirectStandardOutput = true;
+            psi.RedirectStandardError = true;
 
             return InvokeProcessAsync(psi);
         }
 
-        public static async Task<int> InvokeProcessAsync(ProcessStartInfo psi)
+        public static async Task<Tuple<int, string>> InvokeProcessAsync(ProcessStartInfo psi)
         {
             var pi = Process.Start(psi);
-
             await Task.Run(() => pi.WaitForExit());
-            return pi.ExitCode;
+
+            string textResult = await pi.StandardOutput.ReadToEndAsync();
+            if (String.IsNullOrWhiteSpace(textResult)) {
+                textResult = await pi.StandardError.ReadToEndAsync();
+                if (String.IsNullOrWhiteSpace(textResult)) {
+                    textResult = String.Empty;
+                }
+            }
+            return Tuple.Create(pi.ExitCode, textResult.Trim());
         }
 
         public static Task ForEachAsync<T>(this IEnumerable<T> source, Action<T> body, int degreeOfParallelism = 4)
@@ -224,8 +248,7 @@ namespace Squirrel
 
             path = tempDir.FullName;
 
-            return Disposable.Create(() =>
-                DeleteDirectory(tempDir.FullName).Wait());
+            return Disposable.Create(() => Task.Run(async () => await DeleteDirectory(tempDir.FullName)).Wait());
         }
 
         public static async Task DeleteDirectory(string directoryPath)
