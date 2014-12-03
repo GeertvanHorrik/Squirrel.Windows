@@ -189,7 +189,7 @@ namespace Squirrel
             var fileInfo = new FileInfo(filename);
 
             var hash = Utility.CalculateStreamSHA1(file);
-            return new ReleaseEntry(hash, filename, file.Length, filenameIsDeltaFile(filename), fileInfo.CreationTimeUtc, baseUrl);
+            return new ReleaseEntry(hash, fileInfo.Name, file.Length, filenameIsDeltaFile(filename), fileInfo.CreationTimeUtc, baseUrl);
         }
 
         public static ReleaseEntry GenerateFromFile(string path, string baseUrl = null)
@@ -207,7 +207,7 @@ namespace Squirrel
             var entriesQueue = new ConcurrentQueue<ReleaseEntry>();
             Parallel.ForEach(packagesDir.GetFiles("*.nupkg"), x => {
                 using (var file = x.OpenRead()) {
-                    entriesQueue.Enqueue(GenerateFromFile(file, x.FullName, x.Name));
+                    entriesQueue.Enqueue(GenerateFromFile(file, x.FullName));
                 }
             });
 
