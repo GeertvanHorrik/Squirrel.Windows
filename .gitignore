@@ -42,6 +42,7 @@ local.properties
 *.suo
 *.user
 *.sln.docstates
+*.sln.ide
 
 # Build results
 **/[Dd]ebug/
@@ -176,3 +177,4 @@ nunit-Squirrel.Tests.xml
 
 ## Pester Test Output
 tests/Test.xml
+Squirrel.sln.GhostDoc.xml

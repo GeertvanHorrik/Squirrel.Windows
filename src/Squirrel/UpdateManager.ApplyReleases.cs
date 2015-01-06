@@ -39,7 +39,7 @@ namespace Squirrel
                 if (release == null) {
                     if (attemptingFullInstall) {
                         this.Log().Info("No release to install, running the app");
-                        await invokePostInstall(updateInfo.CurrentlyInstalledVersion.Version, false, true);
+                        await invokePostInstall(updateInfo.CurrentlyInstalledVersion.Version, false, true, silentInstall);
                     }
 
                     return getDirectoryForRelease(updateInfo.CurrentlyInstalledVersion.Version).FullName;
@@ -54,8 +54,9 @@ namespace Squirrel
                 progress(50);
 
                 var newVersion = currentReleases.MaxBy(x => x.Version).First().Version;
+                executeSelfUpdate(newVersion);
 
-                await this.ErrorIfThrows(() => invokePostInstall(newVersion, attemptingFullInstall, false),
+                await this.ErrorIfThrows(() => invokePostInstall(newVersion, attemptingFullInstall, false, silentInstall),
                     "Failed to invoke post-install");
                 progress(75);
 
@@ -67,9 +68,6 @@ namespace Squirrel
                 } catch (Exception ex) {
                     this.Log().WarnException("Failed to clean dead versions, continuing anyways", ex);
                 }
-
-                executeSelfUpdate(newVersion);
-
                 progress(100);
 
                 return ret;
@@ -104,7 +102,7 @@ namespace Squirrel
             public void CreateShortcutsForExecutable(string exeName, ShortcutLocation locations, bool updateOnly)
             {
                 var releases = Utility.LoadLocalReleases(Utility.LocalReleaseFileForAppDir(rootAppDirectory));
-                var thisRelease = Utility.FindLatestFullVersion(releases);
+                var thisRelease = Utility.FindCurrentVersion(releases);
 
                 var zf = new ZipPackage(Path.Combine(
                     Utility.PackageDirectoryForAppDir(rootAppDirectory),
@@ -113,7 +111,7 @@ namespace Squirrel
                 var exePath = Path.Combine(Utility.AppDirForRelease(rootAppDirectory, thisRelease), exeName);
                 var fileVerInfo = FileVersionInfo.GetVersionInfo(exePath);
 
-                foreach (var f in new[] { ShortcutLocation.StartMenu, ShortcutLocation.Desktop, ShortcutLocation.StartUp, }) {
+                foreach (var f in (ShortcutLocation[]) Enum.GetValues(typeof(ShortcutLocation))) {
                     if (!locations.HasFlag(f)) continue;
 
                     var file = linkTargetForVersionInfo(f, zf, fileVerInfo);
@@ -159,7 +157,7 @@ namespace Squirrel
                 var fileVerInfo = FileVersionInfo.GetVersionInfo(
                     Path.Combine(Utility.AppDirForRelease(rootAppDirectory, thisRelease), exeName));
 
-                foreach (var f in new[] { ShortcutLocation.StartMenu, ShortcutLocation.Desktop, ShortcutLocation.StartUp, }) {
+                foreach (var f in new[] { ShortcutLocation.StartMenu, ShortcutLocation.Desktop, ShortcutLocation.Startup, }) {
                     if (!locations.HasFlag(f)) continue;
 
                     var file = linkTargetForVersionInfo(f, zf, fileVerInfo);
@@ -324,7 +322,7 @@ namespace Squirrel
                     File.Copy(newSquirrel, Path.Combine(targetDir.Parent.FullName, "Update.exe"), true));
             }
 
-            async Task invokePostInstall(SemVersion currentVersion, bool isInitialInstall, bool firstRunOnly)
+            async Task invokePostInstall(SemVersion currentVersion, bool isInitialInstall, bool firstRunOnly, bool silentInstall)
             {
                 var targetDir = getDirectoryForRelease(currentVersion);
                 var args = isInitialInstall ?
@@ -352,10 +350,12 @@ namespace Squirrel
                     squirrelApps.ForEach(x => CreateShortcutsForExecutable(Path.GetFileName(x), ShortcutLocation.Desktop | ShortcutLocation.StartMenu, isInitialInstall == false));
                 }
 
-                if (!isInitialInstall) return;
+                if (!isInitialInstall || silentInstall) return;
 
                 var firstRunParam = isInitialInstall ? "--squirrel-firstrun" : string.Empty;
-                squirrelApps.ForEach(exe => Process.Start(exe, firstRunParam));
+                squirrelApps
+                    .Select(exe => new ProcessStartInfo(exe, firstRunParam) { WorkingDirectory = Path.GetDirectoryName(exe) })
+                    .ForEach(info => Process.Start(info));
             }
 
             void fixPinnedExecutables(SemVersion newCurrentVersion) 
@@ -568,8 +568,11 @@ namespace Squirrel
                 case ShortcutLocation.StartMenu:
                     dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs", applicationName);
                     break;
-                case ShortcutLocation.StartUp:
-                    dir = Path.Combine (Environment.GetFolderPath (Environment.SpecialFolder.Startup));
+                case ShortcutLocation.Startup:
+                    dir = Environment.GetFolderPath (Environment.SpecialFolder.Startup);
+                    break;
+                case ShortcutLocation.AppRoot:
+                    dir = rootAppDirectory;
                     break;
                 }
 
