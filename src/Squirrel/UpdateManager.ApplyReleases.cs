@@ -102,7 +102,7 @@ namespace Squirrel
             public void CreateShortcutsForExecutable(string exeName, ShortcutLocation locations, bool updateOnly)
             {
                 var releases = Utility.LoadLocalReleases(Utility.LocalReleaseFileForAppDir(rootAppDirectory));
-                var thisRelease = Utility.FindCurrentVersion(releases);
+                var thisRelease = Utility.FindLatestFullVersion(releases);
 
                 var zf = new ZipPackage(Path.Combine(
                     Utility.PackageDirectoryForAppDir(rootAppDirectory),
