@@ -27,6 +27,7 @@ namespace Squirrel
         string PackageName { get; }
 
         string GetReleaseNotes(string packageDirectory);
+        Uri GetIconUrl(string packageDirectory);
     }
 
     [DataContract]
@@ -88,6 +89,12 @@ namespace Squirrel
             }
 
             return zp.ReleaseNotes;
+        }
+
+        public Uri GetIconUrl(string packageDirectory)
+        {
+            var zp = new ZipPackage(Path.Combine(packageDirectory, Filename));
+            return zp.IconUrl;
         }
 
         static readonly Regex entryRegex = new Regex(@"^([0-9a-fA-F]{40})\s+(\S+)\s+(\d+)\s?(\d+)?[\r]*$");

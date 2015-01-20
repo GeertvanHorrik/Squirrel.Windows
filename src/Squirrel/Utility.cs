@@ -567,7 +567,7 @@ namespace Squirrel
                 throw new Exception("Couldn't acquire lock, is another instance running");
             }
 
-            var handle = Disposable.Create(() => {
+            handle = Disposable.Create(() => {
                 fh.Dispose();
                 File.Delete(path);
             });

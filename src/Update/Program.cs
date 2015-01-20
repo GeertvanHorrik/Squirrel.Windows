@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using Mono.Options;
 using Splat;
 using Squirrel;
+using System.Drawing;
+using NuGet;
 
 namespace Squirrel.Update
 {
@@ -82,6 +84,7 @@ namespace Squirrel.Update
                 string processStart = default(string);
                 string processStartArgs = default(string);
                 string appName = default(string);
+                string setupIcon = default(string);
 
                 opts = new OptionSet() {
                     "Usage: Squirrel.exe command [OPTS]",
@@ -104,6 +107,7 @@ namespace Squirrel.Update
                     { "p=|packagesDir=", "Path to the NuGet Packages directory for C# apps", v => packagesDir = v},
                     { "bootstrapperExe=", "Path to the Setup.exe to use as a template", v => bootstrapperExe = v},
                     { "g=|loadingGif=", "Path to an animated GIF to be displayed during installation", v => backgroundGif = v},
+                    { "i=|setupIcon", "Path to an ICO file that will be used for the Setup executable's icon", v => setupIcon = v},
                     { "n=|signWithParams=", "Sign the installer via SignTool.exe with the parameters given", v => signingParameters = v},
                     { "s|silent", "Silent install", _ => silentInstall = true},
                     { "md=|maximumdate=", "Maximum release date", v => maximumReleaseDate = SquirrelEnvironment.ParseDateTime(v, DateTime.MaxValue)},
@@ -124,7 +128,10 @@ namespace Squirrel.Update
                 switch (updateAction)
                 {
                     case UpdateAction.Install:
+                    if (!silentInstall) { 
                         AnimatedGifWindow.ShowWindow(TimeSpan.FromSeconds(4), animatedGifWindowToken.Token);
+                    }
+
                         Install(silentInstall, Path.GetFullPath(target)).Wait();
                         break;
                     case UpdateAction.Uninstall:
@@ -159,7 +166,7 @@ namespace Squirrel.Update
                         UpdateSelf(appName).Wait();
                         break;
                     case UpdateAction.Releasify:
-                        Releasify(target, releaseDir, packagesDir, bootstrapperExe, backgroundGif, signingParameters, baseUrl);
+                    Releasify(target, releaseDir, packagesDir, bootstrapperExe, backgroundGif, signingParameters, baseUrl, setupIcon);
                         break;
                     case UpdateAction.Shortcut:
                         Shortcut(target);
@@ -328,7 +335,7 @@ namespace Squirrel.Update
             }
         }
 
-        public void Releasify(string package, string targetDir = null, string packagesDir = null, string bootstrapperExe = null, string backgroundGif = null, string signingOpts = null, string baseUrl = null)
+        public void Releasify(string package, string targetDir = null, string packagesDir = null, string bootstrapperExe = null, string backgroundGif = null, string signingOpts = null, string baseUrl = null, string setupIcon = null)
         {
             if (baseUrl != null)
             {
@@ -445,10 +452,13 @@ namespace Squirrel.Update
                 File.Delete(zipPath);
             }
 
+            setPEVersionInfoAndIcon(targetSetupExe, new ZipPackage(package), setupIcon).Wait();
+
             if (signingOpts != null)
             {
                 signPEFile(targetSetupExe, signingOpts).Wait();
             }
+
         }
 
         public void Shortcut(string exeName)
@@ -624,8 +634,45 @@ namespace Squirrel.Update
                     "Failed to sign, command invoked was: '{0} sign {1} {2}'", 
                     exe, signingOpts, exePath);
                 throw new Exception(msg);
+            } else {
+                Console.WriteLine(processResult.Item2);
             }
-            else {
+        }
+
+        static async Task setPEVersionInfoAndIcon(string exePath, IPackage package, string iconPath = null)
+        {
+            var verStrings = new Dictionary<string, string>() {
+                { "CompanyName", package.Authors.First() },
+                { "FileDescription", package.Summary ?? package.Description ?? "Installer for " + package.Id },
+                { "ProductName", package.Description ?? package.Summary ?? package.Id },
+            };
+
+            var args = verStrings.Aggregate(new StringBuilder("\"" + exePath + "\""), (acc, x) => { acc.AppendFormat(" --set-version-string \"{0}\" \"{1}\"", x.Key, x.Value); return acc; });
+            args.AppendFormat(" --set-file-version {0} --set-product-version {0}", package.Version.ToString());
+            if (iconPath != null) {
+                args.AppendFormat(" --set-icon \"{0}\"", iconPath);
+            }
+
+            // Try to find rcedit.exe
+            var exe = @".\rcedit.exe";
+            if (!File.Exists(exe)) {
+                exe = Path.Combine(
+                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                    "rcedit.exe");
+
+                // Run down PATH and hope for the best
+                if (!File.Exists(exe)) exe = "rcedit.exe";
+            }
+
+            var processResult = await Utility.InvokeProcessAsync(exe, args.ToString());
+
+            if (processResult.Item1 != 0) {
+                var msg = String.Format(
+                    "Failed to modify resources, command invoked was: '{0} {1}'", 
+                    exe, args);
+
+                throw new Exception(msg);
+            } else {
                 Console.WriteLine(processResult.Item2);
             }
         }

@@ -157,7 +157,7 @@ namespace Squirrel
                 var fileVerInfo = FileVersionInfo.GetVersionInfo(
                     Path.Combine(Utility.AppDirForRelease(rootAppDirectory, thisRelease), exeName));
 
-                foreach (var f in new[] { ShortcutLocation.StartMenu, ShortcutLocation.Desktop, ShortcutLocation.Startup, }) {
+                foreach (var f in (ShortcutLocation[]) Enum.GetValues(typeof(ShortcutLocation))) {
                     if (!locations.HasFlag(f)) continue;
 
                     var file = linkTargetForVersionInfo(f, zf, fileVerInfo);
@@ -172,7 +172,7 @@ namespace Squirrel
 
             async Task<string> installPackageToAppDir(UpdateInfo updateInfo, ReleaseEntry release)
             {
-                var pkg = new ZipPackage(Path.Combine(updateInfo.PackageDirectory, release.Filename));
+                var pkg = new OptimizedZipPackage(Path.Combine(updateInfo.PackageDirectory, release.Filename));
                 var target = getDirectoryForRelease(release.Version);
 
                 // NB: This might happen if we got killed partially through applying the release
