@@ -215,7 +215,6 @@ namespace Squirrel.Update
 
             var rootDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             using (var mgr = new UpdateManager(sourceDirectory, ourAppName, FrameworkVersion.Net45, rootDir)) {
-            {
                 Directory.CreateDirectory(mgr.RootAppDirectory);
 
                 var updateTarget = Path.Combine(mgr.RootAppDirectory, "Update.exe");
@@ -240,7 +239,6 @@ namespace Squirrel.Update
             var ourDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..");
 
             using (var mgr = new UpdateManager(updateUrl, appName, FrameworkVersion.Net45, ourDir)) {
-            {
                 bool ignoreDeltaUpdates = false;
 
             retry:
@@ -278,8 +276,7 @@ namespace Squirrel.Update
         public async Task UpdateSelf(string appName)
         {
             var localAppDir = Environment.ExpandEnvironmentVariables("%LocalAppData%");
-            var targetDir = new DirectoryInfo(
-                Path.Combine(localAppDir, appName));
+            var targetDir = new DirectoryInfo(Path.Combine(localAppDir, appName));
 
             waitForParentToExit();
 
@@ -318,7 +315,6 @@ namespace Squirrel.Update
 
             this.Log().Info("Fetching update information, downloading from " + updateUrl);
             using (var mgr = new UpdateManager(updateUrl, appName, FrameworkVersion.Net45, ourDir)) {
-            {
                 var updateInfo = await mgr.CheckForUpdate(progress: x => Console.WriteLine(x / 3));
                 await mgr.DownloadReleases(updateInfo.ReleasesToApply, x => Console.WriteLine(33 + x / 3));
 
@@ -349,7 +345,6 @@ namespace Squirrel.Update
 
             appName = appName ?? getAppNameFromDirectory();
             using (var mgr = new UpdateManager("", appName, FrameworkVersion.Net45, ourDir)) {
-            {
                 await mgr.FullUninstall();
                 mgr.RemoveUninstallerRegistryEntry();
             }
