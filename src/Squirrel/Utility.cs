@@ -176,7 +176,7 @@ namespace Squirrel
             }
         }
 
-        public static Task<Tuple<int, string>> InvokeProcessAsync(string fileName, string arguments)
+        public static Task<Tuple<int, string>> InvokeProcessAsync(string fileName, string arguments, CancellationToken ct)
         {
             var psi = new ProcessStartInfo(fileName, arguments);
             psi.UseShellExecute = false;
@@ -186,13 +186,22 @@ namespace Squirrel
             psi.RedirectStandardOutput = true;
             psi.RedirectStandardError = true;
 
-            return InvokeProcessAsync(psi);
+            return InvokeProcessAsync(psi, ct);
         }
 
-        public static async Task<Tuple<int, string>> InvokeProcessAsync(ProcessStartInfo psi)
+        public static async Task<Tuple<int, string>> InvokeProcessAsync(ProcessStartInfo psi, CancellationToken ct)
         {
             var pi = Process.Start(psi);
-            await Task.Run(() => pi.WaitForExit());
+            await Task.Run(() => {
+                while (!ct.IsCancellationRequested) {
+                    if (pi.WaitForExit(2000)) return;
+                }
+
+                if (ct.IsCancellationRequested) {
+                    pi.Kill();
+                    ct.ThrowIfCancellationRequested();
+                }
+            });
 
             string textResult = await pi.StandardOutput.ReadToEndAsync();
             if (String.IsNullOrWhiteSpace(textResult)) {
@@ -255,7 +264,7 @@ namespace Squirrel
         {
             Contract.Requires(!String.IsNullOrEmpty(directoryPath));
 
-            Log().Info("Starting to delete folder: {0}", directoryPath);
+            Log().Debug("Starting to delete folder: {0}", directoryPath);
 
             if (!Directory.Exists(directoryPath)) {
                 Log().Warn("DeleteDirectory: does not exist - {0}", directoryPath);
@@ -372,6 +381,18 @@ namespace Squirrel
             }
 
             return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
+        }
+
+        public static void DeleteFileHarder(string path, bool ignoreIfFails = false)
+        {
+            try {
+                Retry(() => File.Delete(path), 2);
+            } catch (Exception ex) {
+                if (ignoreIfFails) return;
+
+                LogHost.Default.ErrorException("Really couldn't delete file: " + path, ex);
+                throw;
+            }
         }
 
         public static async Task DeleteDirectoryWithFallbackToNextReboot(string dir)

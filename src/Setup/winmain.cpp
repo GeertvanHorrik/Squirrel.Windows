@@ -25,9 +25,30 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (!CFxHelper::IsDotNet45OrHigherInstalled()) {
 		hr = CFxHelper::InstallDotNetFramework(isQuiet);
-		if (hr != S_OK) {
+		if (FAILED(hr)) {
+			exitCode = hr; // #yolo
 			goto out;
 		}
+	
+		// S_FALSE isn't failure, but we still shouldn't try to install
+		if (hr != S_OK) {
+			exitCode = 0;
+			goto out;
+		}
+	}
+
+	hr = CUpdateRunner::AreWeUACElevated();
+
+	// If we're UAC-elevated, we shouldn't be because it will give us permissions
+	// problems later. Just silently rerun ourselves.
+	if (hr == S_OK) {
+		wchar_t buf[4096];
+		HMODULE hMod = GetModuleHandle(NULL);
+		GetModuleFileNameW(hMod, buf, 4096);
+
+		CUpdateRunner::ShellExecuteFromExplorer(buf, lpCmdLine);
+		exitCode = 0;
+		goto out;
 	}
 
 	exitCode = CUpdateRunner::ExtractUpdaterAndRun(lpCmdLine);

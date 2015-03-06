@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NuGet;
 using Splat;
+using System.Threading;
 
 namespace Squirrel
 {
@@ -60,6 +61,10 @@ namespace Squirrel
                     "Failed to invoke post-install");
                 progress(75);
 
+                this.Log().Info("Starting fixPinnedExecutables");
+                this.ErrorIfThrows(() => fixPinnedExecutables(updateInfo.FutureReleaseEntry.Version));
+                progress(80);
+
                 try {
                     var currentVersion = updateInfo.CurrentlyInstalledVersion != null ?
                         updateInfo.CurrentlyInstalledVersion.Version : null;
@@ -84,16 +89,31 @@ namespace Squirrel
                     try {
                         var squirrelAwareApps = SquirrelAwareExecutableDetector.GetAllSquirrelAwareApps(currentRelease.FullName);
 
+                        if (isAppFolderDead(currentRelease.FullName)) throw new Exception("App folder is dead, but we're trying to uninstall it?");
+
                         if (squirrelAwareApps.Count > 0) {
-                            await squirrelAwareApps.ForEachAsync(exe => Utility.InvokeProcessAsync(exe, String.Format("--squirrel-uninstall {0}", version)), 1);
+                            await squirrelAwareApps.ForEachAsync(async exe => {
+                                using (var cts = new CancellationTokenSource()) { 
+                                    cts.CancelAfter(10 * 1000);
+
+                                    try {
+                                        await Utility.InvokeProcessAsync(exe, String.Format("--squirrel-uninstall {0}", version), cts.Token);
+                                    } catch (Exception ex) {
+                                        this.Log().ErrorException("Failed to run cleanup hook, continuing: " + exe, ex);
+                                    }
+                                }
+                            }, 1 /*at a time*/);
                         } else {
                             var allApps = SquirrelAwareExecutableDetector.GetAllApps(currentRelease.FullName);
+
                             allApps.ForEach(x => RemoveShortcutsForExecutable(x.Name, ShortcutLocation.StartMenu | ShortcutLocation.Desktop));
                         }
                     } catch (Exception ex) {
                         this.Log().WarnException("Failed to run pre-uninstall hooks, uninstalling anyways", ex);
                     }
                 }
+
+                fixPinnedExecutables(new Version(255, 255, 255, 255));
 
                 await this.ErrorIfThrows(() => Utility.DeleteDirectoryWithFallbackToNextReboot(rootAppDirectory),
                     "Failed to delete app directory: " + rootAppDirectory);
@@ -103,6 +123,7 @@ namespace Squirrel
             {
                 var releases = Utility.LoadLocalReleases(Utility.LocalReleaseFileForAppDir(rootAppDirectory));
                 var thisRelease = Utility.FindLatestFullVersion(releases);
+                var updateExe = getUpdateExe();
 
                 var zf = new ZipPackage(Path.Combine(
                     Utility.PackageDirectoryForAppDir(rootAppDirectory),
@@ -128,16 +149,34 @@ namespace Squirrel
 
                     this.Log().Info("Creating shortcut for {0} => {1}", exeName, file);
 
+                    ShellLink sl;
                     this.ErrorIfThrows(() => {
-                        if (fileExists) File.Delete(file);
+                        if (fileExists) {
+                            try {
+                                sl = new ShellLink();
 
-                        var sl = new ShellLink {
-                            Target = exePath,
+                                sl.Open(file);
+                                if (sl.Target == updateExe && sl.Description == zf.Description && sl.IconPath == exePath) {
+                                    return;
+                                }
+
+                                File.Delete(file);
+                            } catch (Exception ex) {
+                                this.Log().WarnException("Tried to compare shortcut and failed", ex);
+                                File.Delete(file);
+                            }
+                        }
+
+                        sl = new ShellLink {
+                            Target = updateExe,
                             IconPath = exePath,
                             IconIndex = 0,
                             WorkingDirectory = Path.GetDirectoryName(exePath),
                             Description = zf.Description,
+                            Arguments = "--processStart " + exeName,
                         };
+
+                        sl.SetAppUserModelId(String.Format("com.squirrel.{0}.{1}", zf.Id, exeName.Replace(".exe", "")));
 
                         this.Log().Info("About to save shortcut: {0}", file);
                         if (ModeDetector.InUnitTestRunner() == false) sl.Save(file);
@@ -172,7 +211,7 @@ namespace Squirrel
 
             async Task<string> installPackageToAppDir(UpdateInfo updateInfo, ReleaseEntry release)
             {
-                var pkg = new OptimizedZipPackage(Path.Combine(updateInfo.PackageDirectory, release.Filename));
+                var pkg = new ZipPackage(Path.Combine(updateInfo.PackageDirectory, release.Filename));
                 var target = getDirectoryForRelease(release.Version);
 
                 // NB: This might happen if we got killed partially through applying the release
@@ -199,15 +238,23 @@ namespace Squirrel
                 // have to copy these files in-order. Once we fix assembly resolution, 
                 // we can kill both of these NBs.
                 await Task.Run(() => toWrite.ForEach(x => copyFileToLocation(target, x)));
-
                 await pkg.GetContentFiles().ForEachAsync(x => copyFileToLocation(target, x));
 
-                var newCurrentVersion = updateInfo.FutureReleaseEntry.Version;
-
-                this.Log().Info("runPostInstallAndCleanup: starting fixPinnedExecutables");
-                this.ErrorIfThrows(() => fixPinnedExecutables(newCurrentVersion));
-
                 return target.FullName;
+            }
+
+            bool findShortTemporaryDir(out string path)
+            {
+                var dir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%\\ProgramData\\sqtmp");
+                try {
+                    Directory.CreateDirectory(dir);
+                    path = dir;
+                    return true;
+                } catch (IOException ex) {
+                    this.Log().WarnException("Couldn't create short temp dir, trying normal one", ex);
+                    path = Path.GetTempPath();
+                    return false;
+                }
             }
 
             void copyFileToLocation(FileSystemInfo target, IPackageFile x)
@@ -334,7 +381,17 @@ namespace Squirrel
                 this.Log().Info("Squirrel Enabled Apps: [{0}]", String.Join(",", squirrelApps));
 
                 // For each app, run the install command in-order and wait
-                if (!firstRunOnly) await squirrelApps.ForEachAsync(exe => Utility.InvokeProcessAsync(exe, args), 1 /* at a time */);
+                if (!firstRunOnly) await squirrelApps.ForEachAsync(async exe => {
+                    using (var cts = new CancellationTokenSource()) { 
+                        cts.CancelAfter(15 * 1000);
+
+                        try {
+                            await Utility.InvokeProcessAsync(exe, args, cts.Token);
+                        } catch (Exception ex) {
+                            this.Log().ErrorException("Couldn't run Squirrel hook, continuing: " + exe, ex);
+                        }
+                    }
+                }, 1 /* at a time */);
 
                 // If this is the first run, we run the apps with first-run and 
                 // *don't* wait for them, since they're probably the main EXE
@@ -476,7 +533,8 @@ namespace Squirrel
                 // come from here.
                 var toCleanup = di.GetDirectories()
                     .Where(x => x.Name.ToLowerInvariant().Contains("app-"))
-                    .Where(x => x.Name != currentVersionFolder && x.Name != originalVersionFolder);
+                    .Where(x => x.Name != currentVersionFolder && x.Name != originalVersionFolder)
+                    .Where(x => !isAppFolderDead(x.FullName));
 
                 if (forceUninstall == false) {
                     await toCleanup.ForEachAsync(async x => {
@@ -485,7 +543,17 @@ namespace Squirrel
 
                         if (squirrelApps.Count > 0) {
                             // For each app, run the install command in-order and wait
-                            await squirrelApps.ForEachAsync(exe => Utility.InvokeProcessAsync(exe, args), 1 /* at a time */);
+                            await squirrelApps.ForEachAsync(async exe => {
+                                using (var cts = new CancellationTokenSource()) { 
+                                    cts.CancelAfter(10 * 1000);
+
+                                    try {
+                                        await Utility.InvokeProcessAsync(exe, args, cts.Token);
+                                    } catch (Exception ex) {
+                                        this.Log().ErrorException("Coudln't run Squirrel hook, continuing: " + exe, ex);
+                                    }
+                                }
+                            }, 1 /* at a time */);
                         }
                     });
                 }
@@ -494,8 +562,18 @@ namespace Squirrel
                 await toCleanup.ForEachAsync(async x => {
                     try {
                         await Utility.DeleteDirectoryWithFallbackToNextReboot(x.FullName);
+
+                        if (Directory.Exists(x.FullName)) {
+                            // NB: If we cannot clean up a directory, we need to make 
+                            // sure that anyone finding it later won't attempt to run
+                            // Squirrel events on it. We'll mark it with a .dead file
+                            markAppFolderAsDead(x.FullName);
+                        }
                     } catch (UnauthorizedAccessException ex) {
                         this.Log().WarnException("Couldn't delete directory: " + x.FullName, ex);
+
+                        // NB: Same deal as above
+                        markAppFolderAsDead(x.FullName);
                     }
                 });
 
@@ -515,6 +593,16 @@ namespace Squirrel
                 }
 
                 ReleaseEntry.WriteReleaseFile(new[] { releaseEntry }, releasesFile);
+            }
+
+            static void markAppFolderAsDead(string appFolderPath)
+            {
+                File.WriteAllText(Path.Combine(appFolderPath, ".dead"), "");
+            }
+
+            static bool isAppFolderDead(string appFolderPath)
+            {
+                return File.Exists(Path.Combine(appFolderPath, ".dead"));
             }
 
             internal async Task<List<ReleaseEntry>> updateLocalReleasesFile()
