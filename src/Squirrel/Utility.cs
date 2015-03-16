@@ -24,11 +24,7 @@ namespace Squirrel
         public static string GetApplicationDirectory()
         {
             var directory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            if (!directory.ToLower().Contains("squirreltemp"))
-            {
-                directory = Path.GetFullPath(Path.Combine(directory, ".."));
-            }
-            else
+            if (directory.ToLower().Contains("squirreltemp"))
             {
                 directory = Environment.CurrentDirectory;
             }

@@ -124,7 +124,7 @@ namespace Squirrel
                 this.Log().Info("About to create shortcuts for {0}, rootAppDir {1}", exeName, rootAppDirectory);
 
                 var releases = Utility.LoadLocalReleases(Utility.LocalReleaseFileForAppDir(rootAppDirectory));
-                var thisRelease = Utility.FindCurrentVersion(releases);
+                var thisRelease = Utility.FindLatestFullVersion(releases);
                 var updateExe = Path.Combine(rootAppDirectory, "update.exe");
 
                 var zf = new ZipPackage(Path.Combine(

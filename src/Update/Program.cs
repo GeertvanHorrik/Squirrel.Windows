@@ -174,16 +174,16 @@ namespace Squirrel.Update
                         UpdateSelf(appName).Wait();
                         break;
                     case UpdateAction.Releasify:
-                    Releasify(target, releaseDir, packagesDir, bootstrapperExe, backgroundGif, signingParameters, baseUrl, setupIcon);
+                        Releasify(target, releaseDir, packagesDir, bootstrapperExe, backgroundGif, signingParameters, baseUrl, setupIcon);
                         break;
                     case UpdateAction.Shortcut:
-                    Shortcut(target, shortcutArgs);
+                        Shortcut(target, shortcutArgs);
                         break;
                     case UpdateAction.Deshortcut:
-                    Deshortcut(target, shortcutArgs);
+                        Deshortcut(target, shortcutArgs);
                         break;
                     case UpdateAction.ProcessStart:
-                    ProcessStart(processStart, processStartArgs, shouldWait);
+                        ProcessStart(processStart, processStartArgs, shouldWait);
                         break;
                 }
 
@@ -525,6 +525,8 @@ namespace Squirrel.Update
 
             // Find the latest installed version's app dir
             var appDir = Utility.GetApplicationDirectory();
+
+            this.Log().Info("Searching for best app dir in '{0}'", appDir);
 
             var latestAppDir = (from dir in Directory.GetDirectories(appDir)
                                 orderby Directory.GetCreationTime(dir) descending
