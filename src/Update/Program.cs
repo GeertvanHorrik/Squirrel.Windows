@@ -524,14 +524,22 @@ namespace Squirrel.Update
             }
 
             // Find the latest installed version's app dir
-            var appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var releases = ReleaseEntry.ParseReleaseFile(
-                File.ReadAllText(Utility.LocalReleaseFileForAppDir(appDir), Encoding.UTF8));
+            var appDir = Utility.GetApplicationDirectory();
 
-            var latestAppDir = releases
-                .OrderBy(x => x.Version)
-                .Select(x => Utility.AppDirForRelease(appDir, x))
-                .FirstOrDefault(x => Directory.Exists(x));
+            var latestAppDir = (from dir in Directory.GetDirectories(appDir)
+                                orderby Directory.GetCreationTime(dir) descending
+                                select dir).FirstOrDefault();
+
+            var releasesFile = Utility.LocalReleaseFileForAppDir(appDir);
+            if (File.Exists(releasesFile))
+            {
+                var releases = ReleaseEntry.ParseReleaseFile(File.ReadAllText(releasesFile, Encoding.UTF8));
+
+                latestAppDir = releases
+                    .OrderBy(x => x.Version)
+                    .Select(x => Utility.AppDirForRelease(appDir, x))
+                    .FirstOrDefault(x => Directory.Exists(x));                
+            }
 
             // Check for the EXE name they want
             var targetExe = new FileInfo(Path.Combine(latestAppDir, exeName));

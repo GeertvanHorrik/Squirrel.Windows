@@ -21,6 +21,21 @@ namespace Squirrel
 {
     static class Utility
     {
+        public static string GetApplicationDirectory()
+        {
+            var directory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            if (!directory.ToLower().Contains("squirreltemp"))
+            {
+                directory = Path.GetFullPath(Path.Combine(directory, ".."));
+            }
+            else
+            {
+                directory = Environment.CurrentDirectory;
+            }
+
+            return directory;
+        }
+
         public static string RemoveByteOrderMarkerIfPresent(string content)
         {
             return string.IsNullOrEmpty(content) ? 
