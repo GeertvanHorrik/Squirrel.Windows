@@ -396,7 +396,7 @@ namespace Squirrel.Update
             var previousReleases = new List<ReleaseEntry>();
             if (File.Exists(releaseFilePath))
             {
-                previousReleases.AddRange(ReleaseEntry.ParseReleaseFile(File.ReadAllText(releaseFilePath, Encoding.UTF8));
+                previousReleases.AddRange(ReleaseEntry.ParseReleaseFile(File.ReadAllText(releaseFilePath, Encoding.UTF8)));
             }
 
             foreach (var file in toProcess)

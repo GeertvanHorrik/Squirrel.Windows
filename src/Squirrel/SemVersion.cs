@@ -96,6 +96,20 @@ namespace Squirrel
             return _version;
         }
 
+        private static string GetComparableVersion(string version)
+        {
+            var comparableVersion = version.ToLower();
+
+            // We have beta / unstable, etc, replace them by numbers for an easy compare
+            comparableVersion = comparableVersion.Replace("unstable", "01");
+            comparableVersion = comparableVersion.Replace("alpha", "02");
+            comparableVersion = comparableVersion.Replace("beta", "03");
+            comparableVersion = comparableVersion.Replace("rc", "03");
+            comparableVersion = comparableVersion.Replace("releasecandidate", "03");
+
+            return comparableVersion;
+        }
+
         private static string StripDashPartOfVersion(string version)
         {
             var dashIndex = version.IndexOf('-');
@@ -134,9 +148,9 @@ namespace Squirrel
                     return -1;
                 }
 
-                // Full compare
-                versionA = originalVersionA;
-                versionB = originalVersionB;
+                // Get special versions
+                versionA = GetComparableVersion(originalVersionA);
+                versionB = GetComparableVersion(originalVersionB);
             }
 
             return string.Compare(versionA, versionB);
